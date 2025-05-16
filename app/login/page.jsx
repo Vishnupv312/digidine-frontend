@@ -10,6 +10,7 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QrCode, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import axios from "axios";
 
 export default function Login() {
   const [formData, setFormData] = useState({
@@ -26,9 +27,19 @@ export default function Login() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // In a real application, you would send this data to your backend
+    let payload = formData;
+    try {
+      const response = axios.post(
+        `${NEXT_PUBLIC_BASE_URL}api/auth/login`,
+        payload
+      );
+      localStorage.setItem("authToken", response.message);
+    } catch (err) {
+      console.log(err.message);
+    }
+
     console.log("Form submitted:", formData);
     // Redirect to dashboard after successful login
     window.location.href = "/dashboard";
