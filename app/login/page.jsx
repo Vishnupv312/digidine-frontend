@@ -11,13 +11,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QrCode, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import axios from "axios";
+import { ToastAction } from "@/components/ui/toast";
+import toast from "react-hot-toast";
+import { useRouter } from "next/navigation";
 
 export default function Login() {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-    rememberMe: false,
+    // rememberMe: false,
   });
+  const router = useRouter();
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -31,18 +35,30 @@ export default function Login() {
     e.preventDefault();
     let payload = formData;
     try {
-      const response = axios.post(
-        `${NEXT_PUBLIC_BASE_URL}api/auth/login`,
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/auth/login`,
         payload
       );
-      localStorage.setItem("authToken", response.message);
+      if (response) {
+        console.log("success login", response);
+        // localStorage.setItem("authToken", res.token);
+
+        toast.success(response?.data.message, {
+          icon: "👏",
+          style: {
+            borderRadius: "10px",
+            background: "#333",
+            color: "#fff",
+          },
+        });
+        router.push("/dashboard");
+      }
     } catch (err) {
-      console.log(err.message);
+      toast.error(err.response.data.message);
+      console.log(err.response.data.message);
     }
 
-    console.log("Form submitted:", formData);
     // Redirect to dashboard after successful login
-    window.location.href = "/dashboard";
   };
 
   const fadeIn = {
@@ -118,7 +134,7 @@ export default function Login() {
                         className="bg-white"
                       />
                     </div>
-                    <div className="flex items-center space-x-2">
+                    {/* <div className="flex items-center space-x-2">
                       <Checkbox
                         id="rememberMe"
                         name="rememberMe"
@@ -136,7 +152,7 @@ export default function Login() {
                       >
                         Remember me
                       </label>
-                    </div>
+                    </div> */}
                   </CardContent>
                   <CardFooter>
                     <Button type="submit" className="w-full text-white">

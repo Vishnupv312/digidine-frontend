@@ -32,9 +32,11 @@ import {
   Plus,
   ChevronRight,
 } from "lucide-react";
+import axios from "axios";
 
 export default function Dashboard() {
   // Sample data for charts
+
   const visitData = [
     { name: "Mon", visits: 120 },
     { name: "Tue", visits: 150 },
