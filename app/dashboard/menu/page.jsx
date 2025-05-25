@@ -1,14 +1,31 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
+import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Search,
@@ -20,7 +37,7 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
-} from "lucide-react"
+} from "lucide-react";
 
 export default function MenuManagement() {
   // Sample menu items data
@@ -115,55 +132,63 @@ export default function MenuManagement() {
       featured: false,
       image: "/placeholder.svg",
     },
-  ]
+  ];
 
-  const [menuItems, setMenuItems] = useState(initialMenuItems)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [categoryFilter, setCategoryFilter] = useState("")
-  const [statusFilter, setStatusFilter] = useState("")
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null })
+  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // Filter menu items based on search term and filters
   const filteredItems = menuItems.filter((item) => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "" || item.category === categoryFilter
-    const matchesStatus = statusFilter === "" || item.status === statusFilter
-    return matchesSearch && matchesCategory && matchesStatus
-  })
+    const matchesSearch = item.name
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const matchesCategory =
+      categoryFilter === "all" || item.category === categoryFilter;
+    const matchesStatus =
+      statusFilter === "all" || item.status === statusFilter;
+    return matchesSearch && matchesCategory && matchesStatus;
+  });
 
   // Sort menu items
   const sortedItems = [...filteredItems].sort((a, b) => {
-    if (!sortConfig.key) return 0
+    if (!sortConfig.key) return 0;
 
     if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === "ascending" ? -1 : 1
+      return sortConfig.direction === "ascending" ? -1 : 1;
     }
     if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === "ascending" ? 1 : -1
+      return sortConfig.direction === "ascending" ? 1 : -1;
     }
-    return 0
-  })
+    return 0;
+  });
 
   // Request sort
   const requestSort = (key) => {
-    let direction = "ascending"
+    let direction = "ascending";
     if (sortConfig.key === key && sortConfig.direction === "ascending") {
-      direction = "descending"
+      direction = "descending";
     }
-    setSortConfig({ key, direction })
-  }
+    setSortConfig({ key, direction });
+  };
 
   // Delete menu item
   const deleteMenuItem = (id) => {
     if (confirm("Are you sure you want to delete this menu item?")) {
-      setMenuItems(menuItems.filter((item) => item.id !== id))
+      setMenuItems(menuItems.filter((item) => item.id !== id));
     }
-  }
+  };
 
   // Toggle featured status
   const toggleFeatured = (id) => {
-    setMenuItems(menuItems.map((item) => (item.id === id ? { ...item, featured: !item.featured } : item)))
-  }
+    setMenuItems(
+      menuItems.map((item) =>
+        item.id === id ? { ...item, featured: !item.featured } : item
+      )
+    );
+  };
 
   // Toggle active status
   const toggleStatus = (id) => {
@@ -174,10 +199,10 @@ export default function MenuManagement() {
               ...item,
               status: item.status === "Active" ? "Inactive" : "Active",
             }
-          : item,
-      ),
-    )
-  }
+          : item
+      )
+    );
+  };
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -186,18 +211,20 @@ export default function MenuManagement() {
       y: 0,
       transition: { duration: 0.5 },
     },
-  }
+  };
 
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Menu Management</h1>
-          <p className="text-muted-foreground">Manage your restaurant's menu items, categories, and pricing.</p>
+          <p className="text-muted-foreground">
+            Manage your restaurant's menu items, categories, and pricing.
+          </p>
         </div>
         <div className="flex gap-2 mt-4 md:mt-0">
           <Link href="/dashboard/menu/new">
-            <Button>
+            <Button className="text-white">
               <Plus className="mr-2 h-4 w-4" /> Add Menu Item
             </Button>
           </Link>
@@ -226,7 +253,11 @@ export default function MenuManagement() {
               <SelectTrigger className="w-[180px]">
                 <div className="flex items-center">
                   <Filter className="mr-2 h-4 w-4" />
-                  <span>{categoryFilter || "All Categories"}</span>
+                  <span>
+                    {categoryFilter === "all"
+                      ? "All Categories"
+                      : categoryFilter}
+                  </span>
                 </div>
               </SelectTrigger>
               <SelectContent>
@@ -260,19 +291,28 @@ export default function MenuManagement() {
               <TableRow>
                 <TableHead className="w-[80px]">Image</TableHead>
                 <TableHead>
-                  <div className="flex items-center cursor-pointer" onClick={() => requestSort("name")}>
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() => requestSort("name")}
+                  >
                     Name
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </div>
                 </TableHead>
                 <TableHead>
-                  <div className="flex items-center cursor-pointer" onClick={() => requestSort("category")}>
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() => requestSort("category")}
+                  >
                     Category
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </div>
                 </TableHead>
                 <TableHead>
-                  <div className="flex items-center cursor-pointer" onClick={() => requestSort("price")}>
+                  <div
+                    className="flex items-center cursor-pointer"
+                    onClick={() => requestSort("price")}
+                  >
                     Price
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                   </div>
@@ -300,8 +340,10 @@ export default function MenuManagement() {
                     <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={item.status === "Active" ? "default" : "secondary"}
-                        className="cursor-pointer"
+                        variant={
+                          item.status === "Active" ? "default" : "secondary"
+                        }
+                        className="cursor-pointer py-2 px-1 text-white font-semibold"
                         onClick={() => toggleStatus(item.id)}
                       >
                         {item.status}
@@ -310,7 +352,7 @@ export default function MenuManagement() {
                     <TableCell>
                       <Badge
                         variant={item.featured ? "secondary" : "outline"}
-                        className="cursor-pointer"
+                        className="cursor-pointer py-2 px-1 text-white font-semibold"
                         onClick={() => toggleFeatured(item.id)}
                       >
                         {item.featured ? "Featured" : "Regular"}
@@ -325,18 +367,27 @@ export default function MenuManagement() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
-                            <Link href={`/dashboard/menu/${item.id}`} className="flex w-full items-center">
+                            <Link
+                              href={`/dashboard/menu/${item.id}`}
+                              className="flex w-full items-center"
+                            >
                               <Eye className="mr-2 h-4 w-4" />
                               View
                             </Link>
                           </DropdownMenuItem>
                           <DropdownMenuItem>
-                            <Link href={`/dashboard/menu/${item.id}/edit`} className="flex w-full items-center">
+                            <Link
+                              href={`/dashboard/menu/${item.id}/edit`}
+                              className="flex w-full items-center"
+                            >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
                             </Link>
                           </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => deleteMenuItem(item.id)}>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => deleteMenuItem(item.id)}
+                          >
                             <Trash className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
@@ -374,5 +425,5 @@ export default function MenuManagement() {
         </div>
       </motion.div>
     </div>
-  )
+  );
 }

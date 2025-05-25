@@ -37,7 +37,10 @@ export default function Login() {
     try {
       const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}api/auth/login`,
-        payload
+        payload,
+        {
+          withCredentials: true, // ✅ CRUCIAL: allows the browser to accept and store cookies
+        }
       );
       if (response) {
         console.log("success login", response);
@@ -51,6 +54,7 @@ export default function Login() {
             color: "#fff",
           },
         });
+
         router.push("/dashboard");
       }
     } catch (err) {

@@ -9,6 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { QrCode, Check } from "lucide-react";
+import { useRouter } from "next/navigation";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 export default function SignUp() {
   const [formData, setFormData] = useState({
@@ -19,6 +22,7 @@ export default function SignUp() {
     confirmPassword: "",
   });
 
+  const router = useRouter();
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -26,10 +30,26 @@ export default function SignUp() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // In a real application, you would send this data to your backend
-    console.log("Form submitted:", formData);
-    // Redirect to dashboard after successful signup
-    window.location.href = "/dashboard";
+    if (formData.password === formData.confirmPassword) {
+      axios
+        .post(
+          `${process.env.NEXT_PUBLIC_BASE_URL}api/auth/registration`,
+          formData,
+          {
+            withCredentials: true,
+          }
+        )
+        .then((res) => {
+          toast.success(res.data.message);
+          router.push("/dashboard");
+        })
+        .catch((err) => {
+          toast.error(err.message);
+          console.log(err.message);
+        });
+    } else {
+      toast.error("passwords should match");
+    }
   };
 
   const fadeIn = {

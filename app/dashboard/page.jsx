@@ -33,6 +33,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import axios from "axios";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthProvider";
+import toast from "react-hot-toast";
 
 export default function Dashboard() {
   // Sample data for charts
@@ -115,6 +119,47 @@ export default function Dashboard() {
       },
     },
   };
+
+  const router = useRouter();
+  const { user, setUser, isAuthenticated, loading, setLoading } = useAuth();
+  useEffect(() => {
+    axios
+      .get(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/auth/me`,
+        {
+          withCredentials: true,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then((res) => {
+        if (res.data.authenticated) setUser(true);
+        else {
+          setUser(false);
+          toast.error(" couldn't authenticate the user ", {
+            icon: "❌",
+            style: {
+              borderRadius: "10px",
+              background: "#333",
+              color: "#fff",
+            },
+          });
+          router.push("/login");
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+
+        setUser(false);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+  if (loading) return <p>Loading user data</p>;
 
   return (
     <div>
