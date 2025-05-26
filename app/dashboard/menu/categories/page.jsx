@@ -45,6 +45,7 @@ import {
 import toast from "react-hot-toast";
 import use from "react";
 import axios from "axios";
+import NoCategoryContent from "./components/No-Categories";
 
 export default function CategoriesManagement() {
   // Sample categories data
@@ -105,7 +106,7 @@ export default function CategoriesManagement() {
     },
   ];
 
-  const [categories, setCategories] = useState();
+  const [categories, setCategories] = useState(initialCategories);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -128,6 +129,9 @@ export default function CategoriesManagement() {
         })
         .then((res) => {
           if (res.data.data.length === 0) return setCategoryFlag(true);
+        })
+        .catch((err) => {
+          console.log(err.message);
         });
     };
     fetchCategories();
@@ -352,6 +356,8 @@ export default function CategoriesManagement() {
       transition: { duration: 0.5 },
     },
   };
+
+  if (categoryFlag) return <NoCategoryContent />;
 
   return (
     <div>

@@ -50,7 +50,7 @@ export default function Navbar() {
         </div>
 
         {/* Desktop Navigation */}
-        {!isAuthenticated && (
+        {!isAuthenticated ? (
           <nav className="hidden md:flex items-center gap-6">
             <Link
               href="/"
@@ -87,6 +87,21 @@ export default function Navbar() {
               className="text-sm font-medium transition-colors hover:text-primary"
             >
               Blog
+            </Link>
+          </nav>
+        ) : (
+          <nav className="hidden md:flex items-center gap-6">
+            <Link
+              href="/"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Home
+            </Link>
+            <Link
+              href="/dashboard"
+              className="text-sm font-medium transition-colors hover:text-primary"
+            >
+              Dasboard
             </Link>
           </nav>
         )}

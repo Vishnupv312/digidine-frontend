@@ -14,7 +14,9 @@ import {
   CheckCircle2,
   ChevronRight,
 } from "lucide-react";
-
+import axios from "axios";
+import { useEffect } from "react";
+import { useAuth } from "@/context/AuthProvider";
 export default function Home() {
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -34,6 +36,21 @@ export default function Home() {
       },
     },
   };
+
+  const { user, setUser, isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    axios
+      .get(`${process.env.NEXT_PUBLIC_BASE_URL}api/auth/me`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        setUser(true);
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
