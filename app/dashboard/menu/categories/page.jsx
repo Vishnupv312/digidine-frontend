@@ -49,64 +49,8 @@ import NoCategoryContent from "./components/No-Categories";
 
 export default function CategoriesManagement() {
   // Sample categories data
-  const initialCategories = [
-    {
-      id: 1,
-      name: "Appetizers",
-      description: "Small dishes served before the main course",
-      itemCount: 8,
-      color: "#FF6B6B",
-      status: "Active",
-      createdAt: "2024-01-15",
-    },
-    {
-      id: 2,
-      name: "Main Course",
-      description: "Primary dishes on the menu",
-      itemCount: 12,
-      color: "#4ECDC4",
-      status: "Active",
-      createdAt: "2024-01-10",
-    },
-    {
-      id: 3,
-      name: "Desserts",
-      description: "Sweet dishes served after the main course",
-      itemCount: 6,
-      color: "#FFD166",
-      status: "Active",
-      createdAt: "2024-01-20",
-    },
-    {
-      id: 4,
-      name: "Beverages",
-      description: "Drinks and refreshments",
-      itemCount: 10,
-      color: "#6B5CA5",
-      status: "Active",
-      createdAt: "2024-01-12",
-    },
-    {
-      id: 5,
-      name: "Specials",
-      description: "Chef's special dishes",
-      itemCount: 4,
-      color: "#F9A826",
-      status: "Active",
-      createdAt: "2024-01-25",
-    },
-    {
-      id: 6,
-      name: "Seasonal",
-      description: "Limited time offerings based on seasonal ingredients",
-      itemCount: 3,
-      color: "#72B01D",
-      status: "Inactive",
-      createdAt: "2024-01-08",
-    },
-  ];
 
-  const [categories, setCategories] = useState(initialCategories);
+  const [categories, setCategories] = useState();
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -129,53 +73,37 @@ export default function CategoriesManagement() {
         })
         .then((res) => {
           if (res.data.data.length === 0) return setCategoryFlag(true);
+          setCategories(res.data.data);
         })
         .catch((err) => {
           console.log(err.message);
         });
     };
     fetchCategories();
-  });
+  }, []);
 
   // Predefined color options
-  const colorOptions = [
-    "#FF6B6B",
-    "#4ECDC4",
-    "#FFD166",
-    "#6B5CA5",
-    "#F9A826",
-    "#72B01D",
-    "#E74C3C",
-    "#3498DB",
-    "#9B59B6",
-    "#F39C12",
-    "#27AE60",
-    "#E67E22",
-    "#34495E",
-    "#95A5A6",
-    "#1ABC9C",
-  ];
 
   // Filter categories based on search term
-  const filteredCategories = categories.filter((category) => {
-    return (
-      category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  });
+  // const filteredCategories = categories.filter((category) => {
+  //   return (
+  //     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  //     category.description.toLowerCase().includes(searchTerm.toLowerCase())
+  //   );
+  // });
 
-  // Sort categories
-  const sortedCategories = [...filteredCategories].sort((a, b) => {
-    if (!sortConfig.key) return 0;
+  // // Sort categories
+  // const sortedCategories = [...filteredCategories].sort((a, b) => {
+  //   if (!sortConfig.key) return 0;
 
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === "ascending" ? -1 : 1;
-    }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === "ascending" ? 1 : -1;
-    }
-    return 0;
-  });
+  //   if (a[sortConfig.key] < b[sortConfig.key]) {
+  //     return sortConfig.direction === "ascending" ? -1 : 1;
+  //   }
+  //   if (a[sortConfig.key] > b[sortConfig.key]) {
+  //     return sortConfig.direction === "ascending" ? 1 : -1;
+  //   }
+  //   return 0;
+  // });
 
   // Request sort
   const requestSort = (key) => {
@@ -373,9 +301,9 @@ export default function CategoriesManagement() {
         <div className="flex gap-2 mt-4 md:mt-0">
           <Button
             onClick={handleAddButtonClick}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 text-white"
           >
-            <Plus className="mr-2 h-4 w-4" /> Add Category
+            <Plus className="mr-2 h-4 w-4 text-white" /> Add Category
           </Button>
         </div>
       </div>
@@ -397,16 +325,16 @@ export default function CategoriesManagement() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="text-sm text-gray-500 flex items-center">
+          {/* <div className="text-sm text-gray-500 flex items-center">
             {filteredCategories.length} of {categories.length} categories
-          </div>
+          </div> */}
         </div>
 
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[60px]">Color</TableHead>
+                <TableHead className="w-[60px]">Order</TableHead>
                 <TableHead>
                   <div
                     className="flex items-center cursor-pointer"
@@ -433,15 +361,15 @@ export default function CategoriesManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedCategories.length > 0 ? (
-                sortedCategories.map((category) => (
-                  <TableRow key={category.id} className="hover:bg-gray-50">
+              {
+                // categories.length > 0 ?
+                // (
+                categories?.map((category) => (
+                  <TableRow key={category._id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div
-                        className="w-8 h-8 rounded-lg border shadow-sm"
-                        style={{ backgroundColor: category.color }}
-                        title={`Category color: ${category.color}`}
-                      />
+                      <div className="w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center font-semibold">
+                        {category?.order}
+                      </div>
                     </TableCell>
                     <TableCell className="font-medium font-zilla-slab">
                       {category.name}
@@ -451,30 +379,28 @@ export default function CategoriesManagement() {
                     </TableCell>
                     <TableCell>
                       <span className="text-sm">
-                        {category.itemCount} items
+                        {category.foodItems.length} items
                       </span>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge
                           variant={
-                            category.status === "Active"
-                              ? "default"
-                              : "secondary"
+                            category.status === true ? "default" : "secondary"
                           }
                           className={`cursor-pointer transition-colors ${
-                            category.status === "Active"
-                              ? "bg-green-100 text-green-800 hover:bg-green-200"
+                            category.status === true
+                              ? "bg-green-100 py-2 px-1 text-green-800 hover:bg-green-200"
                               : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                           }`}
-                          onClick={() => toggleStatus(category.id)}
+                          onClick={() => toggleStatus(category._id)}
                         >
-                          {category.status === "Active" ? (
+                          {category.status === true ? (
                             <Eye className="w-3 h-3 mr-1" />
                           ) : (
                             <EyeOff className="w-3 h-3 mr-1" />
                           )}
-                          {category.status}
+                          {category.status === true ? "Active" : "InActive"}
                         </Badge>
                       </div>
                     </TableCell>
@@ -520,20 +446,21 @@ export default function CategoriesManagement() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    {searchTerm
-                      ? "No categories found matching your search."
-                      : "No categories found. Create your first category to get started."}
-                  </TableCell>
-                </TableRow>
-              )}
+                // ) : (
+                //   <TableRow>
+                //     <TableCell colSpan={6} className="h-24 text-center">
+                //       {searchTerm
+                //         ? "No categories found matching your search."
+                //         : "No categories found. Create your first category to get started."}
+                //     </TableCell>
+                //   </TableRow>
+                // )
+              }
             </TableBody>
           </Table>
         </div>
 
-        {sortedCategories.length > 0 && (
+        {/* {sortedCategories.length > 0 && (
           <div className="flex items-center justify-between mt-4">
             <div className="text-sm text-gray-500">
               Showing {sortedCategories.length} of {categories.length}{" "}
@@ -555,7 +482,7 @@ export default function CategoriesManagement() {
               </Button>
             </div>
           </div>
-        )}
+        )} */}
       </motion.div>
 
       {/* Add Category Dialog */}
@@ -621,7 +548,7 @@ export default function CategoriesManagement() {
                   {newCategory.color}
                 </span>
               </div>
-              <div className="grid grid-cols-8 gap-2 mt-2">
+              {/* <div className="grid grid-cols-8 gap-2 mt-2">
                 {colorOptions.map((color) => (
                   <button
                     key={color}
@@ -635,7 +562,7 @@ export default function CategoriesManagement() {
                     onClick={() => setNewCategory({ ...newCategory, color })}
                   />
                 ))}
-              </div>
+              </div> */}
             </div>
             <div className="flex items-center justify-between">
               <Label htmlFor="status" className="text-sm font-medium">
