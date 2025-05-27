@@ -56,6 +56,7 @@ export default function CategoriesManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentCategory, setCurrentCategory] = useState(null);
+
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
@@ -64,7 +65,7 @@ export default function CategoriesManagement() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryFlag, setCategoryFlag] = useState(false);
-
+  const [categoryStatus, setCategoryStatus] = useState(false);
   useEffect(() => {
     const fetchCategories = async () => {
       axios
@@ -146,21 +147,33 @@ export default function CategoriesManagement() {
   };
 
   // Toggle active status
-  const toggleStatus = (id) => {
-    setCategories(
-      categories.map((category) =>
-        category.id === id
-          ? {
-              ...category,
-              status: category.status === "Active" ? "Inactive" : "Active",
-            }
-          : category
+  const toggleStatus = async (id) => {
+    const payload = { id };
+    axios
+      .put(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/menu/update-category-status`,
+        payload,
+        { withCredentials: true }
       )
-    );
-
-    const category = categories.find((cat) => cat.id === id);
-    const newStatus = category.status === "Active" ? "Inactive" : "Active";
-    showToast(`Category "${category.name}" is now ${newStatus.toLowerCase()}`);
+      .then((res) => {
+        toast.success(res.data.message);
+      })
+      .catch((err) => {
+        toast.error(err.message);
+      });
+    // setCategories(
+    //   categories.map((category) =>
+    //     category.id === id
+    //       ? {
+    //           ...category,
+    //           status: category.status === "Active" ? "Inactive" : "Active",
+    //         }
+    //       : category
+    //   )
+    // );
+    // const category = categories.find((cat) => cat.id === id);
+    // const newStatus = category.status === "Active" ? "Inactive" : "Active";
+    // showToast(`Category "${category.name}" is now ${newStatus.toLowerCase()}`);
   };
 
   // Validate form
