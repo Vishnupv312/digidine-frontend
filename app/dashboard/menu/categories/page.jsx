@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, number } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,6 +11,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu,
@@ -37,18 +38,23 @@ import {
   Edit,
   Trash,
   ArrowUpDown,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   EyeOff,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import use from "react";
 import axios from "axios";
 import NoCategoryContent from "./components/No-Categories";
+import { Controller, useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 
 export default function CategoriesManagement() {
-  // Sample categories data
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors },
+    reset,
+  } = useForm();
 
   const [categories, setCategories] = useState();
   const [searchTerm, setSearchTerm] = useState("");
@@ -66,20 +72,23 @@ export default function CategoriesManagement() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [categoryFlag, setCategoryFlag] = useState(false);
   const [categoryStatus, setCategoryStatus] = useState(false);
+  const router = useRouter();
+  const categoryCount = Object.keys(categories || {}).length;
+
+  const fetchCategories = async () => {
+    axios
+      .get(`${process.env.NEXT_PUBLIC_BASE_URL}api/menu/fetch-categories`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        if (res.data.data.length === 0) return setCategoryFlag(true);
+        setCategories(res.data.data);
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+  };
   useEffect(() => {
-    const fetchCategories = async () => {
-      axios
-        .get(`${process.env.NEXT_PUBLIC_BASE_URL}api/menu/fetch-categories`, {
-          withCredentials: true,
-        })
-        .then((res) => {
-          if (res.data.data.length === 0) return setCategoryFlag(true);
-          setCategories(res.data.data);
-        })
-        .catch((err) => {
-          console.log(err.message);
-        });
-    };
     fetchCategories();
   }, []);
 
@@ -127,23 +136,22 @@ export default function CategoriesManagement() {
 
   // Delete category
   const deleteCategory = (id) => {
-    const category = categories.find((cat) => cat.id === id);
-    if (category && category.itemCount > 0) {
-      showToast(
-        `Cannot delete "${category.name}" because it contains ${category.itemCount} menu items. Please move or delete the items first.`,
-        "error"
-      );
-      return;
-    }
-
-    if (
-      confirm(
-        "Are you sure you want to delete this category? This action cannot be undone."
+    const payload = {
+      id,
+    };
+    axios
+      .post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/menu/delete-category`,
+        payload,
+        { withCredentials: true }
       )
-    ) {
-      setCategories(categories.filter((category) => category.id !== id));
-      showToast("Category deleted successfully!");
-    }
+      .then((res) => {
+        toast.success(res.data.message);
+        fetchCategories();
+      })
+      .catch((err) => {
+        toast.error(err.response.data.message);
+      });
   };
 
   // Toggle active status
@@ -157,9 +165,10 @@ export default function CategoriesManagement() {
       )
       .then((res) => {
         toast.success(res.data.message);
+        fetchCategories();
       })
       .catch((err) => {
-        toast.error(err.message);
+        toast.error(err.response.data.message);
       });
     // setCategories(
     //   categories.map((category) =>
@@ -177,67 +186,29 @@ export default function CategoriesManagement() {
   };
 
   // Validate form
-  const validateForm = (categoryData) => {
-    if (!categoryData.name.trim()) {
-      showToast("Category name is required", "error");
-      return false;
-    }
-
-    if (categoryData.name.trim().length < 2) {
-      showToast("Category name must be at least 2 characters long", "error");
-      return false;
-    }
-
-    // Check for duplicate names (excluding current category when editing)
-    const existingCategory = categories.find(
-      (cat) =>
-        cat.name.toLowerCase() === categoryData.name.trim().toLowerCase() &&
-        (!currentCategory || cat.id !== currentCategory.id)
-    );
-
-    if (existingCategory) {
-      showToast("A category with this name already exists", "error");
-      return false;
-    }
-
-    return true;
-  };
 
   // Handle add category
-  const handleAddCategory = async () => {
-    if (!validateForm(newCategory)) return;
-
-    setIsSubmitting(true);
+  const handleAddCategory = async (data) => {
+    const payload = {
+      name: data.name,
+      description: data.description,
+      order: data.order,
+      status: data.status,
+    };
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const id =
-        categories.length > 0
-          ? Math.max(...categories.map((c) => c.id)) + 1
-          : 1;
-      const categoryToAdd = {
-        ...newCategory,
-        id,
-        name: newCategory.name.trim(),
-        itemCount: 0,
-        createdAt: new Date().toISOString().split("T")[0],
-      };
-
-      setCategories([...categories, categoryToAdd]);
-      setNewCategory({
-        name: "",
-        description: "",
-        color: "#4ECDC4",
-        status: "Active",
-      });
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/menu/add-category`,
+        payload,
+        { withCredentials: true }
+      );
+      showToast(res.data.message);
+      fetchCategories();
       setIsAddDialogOpen(false);
-      showToast(`Category "${categoryToAdd.name}" created successfully!`);
-    } catch (error) {
-      showToast("Failed to create category. Please try again.", "error");
-    } finally {
-      setIsSubmitting(false);
+      reset();
+    } catch (err) {
+      toast.error("Failed to add category");
+      console.error(err);
     }
   };
 
@@ -258,7 +229,7 @@ export default function CategoriesManagement() {
             : category
         )
       );
-      setIsEditDialogOpen(false);
+      // setIsEditDialogOpen(false);
       showToast(`Category "${currentCategory.name}" updated successfully!`);
     } catch (error) {
       showToast("Failed to update category. Please try again.", "error");
@@ -268,10 +239,15 @@ export default function CategoriesManagement() {
   };
 
   // Open edit dialog
-  const openEditDialog = (category) => {
-    setCurrentCategory({ ...category });
+  const openEditDialog = async (category) => {
+    // setCurrentCategory({ ...category });
     setIsEditDialogOpen(true);
+    console.log("edit button clicked ");
   };
+
+  useEffect(() => {
+    console.log("Edit dialog state changed:", isEditDialogOpen);
+  }, [isEditDialogOpen]);
 
   // Reset form
   const resetForm = () => {
@@ -283,8 +259,18 @@ export default function CategoriesManagement() {
     });
   };
 
+  useEffect(() => {
+    if (isAddDialogOpen) {
+      reset({
+        name: "",
+        description: "",
+        order: categoryCount + 1,
+      });
+    }
+  }, [isAddDialogOpen, categories, reset]);
+
   // Handle add button click
-  const handleAddButtonClick = () => {
+  const handleAddButtonClick = (data) => {
     console.log("Add button clicked"); // Debug log
     setIsAddDialogOpen(true);
   };
@@ -299,7 +285,7 @@ export default function CategoriesManagement() {
   };
 
   if (categoryFlag) return <NoCategoryContent />;
-
+  console.log(typeof categories);
   return (
     <div>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
@@ -325,7 +311,7 @@ export default function CategoriesManagement() {
         initial="hidden"
         animate="visible"
         variants={fadeIn}
-        className="bg-white p-6 rounded-lg shadow-sm border"
+        className="bg-white p-6 rounded-lg shadow-xs border"
       >
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -338,9 +324,6 @@ export default function CategoriesManagement() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          {/* <div className="text-sm text-gray-500 flex items-center">
-            {filteredCategories.length} of {categories.length} categories
-          </div> */}
         </div>
 
         <div className="rounded-md border">
@@ -380,7 +363,7 @@ export default function CategoriesManagement() {
                 categories?.map((category) => (
                   <TableRow key={category._id} className="hover:bg-gray-50">
                     <TableCell>
-                      <div className="w-8 h-8 rounded-lg border shadow-sm flex items-center justify-center font-semibold">
+                      <div className="w-8 h-8 rounded-lg border shadow-xs flex items-center justify-center font-semibold">
                         {category?.order}
                       </div>
                     </TableCell>
@@ -432,10 +415,10 @@ export default function CategoriesManagement() {
                             Edit Category
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            onClick={() => toggleStatus(category.id)}
+                            onClick={() => toggleStatus(category._id)}
                             className="text-blue-600"
                           >
-                            {category.status === "Active" ? (
+                            {category.status == 1 ? (
                               <>
                                 <EyeOff className="mr-2 h-4 w-4" />
                                 Deactivate
@@ -449,7 +432,7 @@ export default function CategoriesManagement() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
-                            onClick={() => deleteCategory(category.id)}
+                            onClick={() => deleteCategory(category._id)}
                           >
                             <Trash className="mr-2 h-4 w-4" />
                             Delete
@@ -472,34 +455,9 @@ export default function CategoriesManagement() {
             </TableBody>
           </Table>
         </div>
-
-        {/* {sortedCategories.length > 0 && (
-          <div className="flex items-center justify-between mt-4">
-            <div className="text-sm text-gray-500">
-              Showing {sortedCategories.length} of {categories.length}{" "}
-              categories
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" disabled>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                className="bg-primary text-white"
-              >
-                1
-              </Button>
-              <Button variant="outline" size="sm" disabled>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )} */}
       </motion.div>
 
       {/* Add Category Dialog */}
-      {/* {isAddDialogOpen && ( */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -517,13 +475,13 @@ export default function CategoriesManagement() {
               </Label>
               <Input
                 id="name"
-                value={newCategory.name}
-                onChange={(e) =>
-                  setNewCategory({ ...newCategory, name: e.target.value })
-                }
+                {...register("name", "Category Name is required")}
                 placeholder="e.g., Appetizers, Main Course, Desserts"
                 className="w-full"
               />
+              {errors.name && (
+                <p className="text-red-500 text-sm font-bold">{errors.name}</p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label htmlFor="description" className="text-sm font-medium">
@@ -531,67 +489,53 @@ export default function CategoriesManagement() {
               </Label>
               <Textarea
                 id="description"
-                value={newCategory.description}
-                onChange={(e) =>
-                  setNewCategory({
-                    ...newCategory,
-                    description: e.target.value,
-                  })
-                }
+                {...register("description")}
                 placeholder="Brief description of this category"
                 rows={3}
               />
+              {errors.description && (
+                <p className="text-red-500 text-sm font-bold">
+                  {errors.description}
+                </p>
+              )}
             </div>
             <div className="grid gap-3">
-              <Label className="text-sm font-medium">Category Color</Label>
+              <Label className="text-sm font-medium"> Category Order * </Label>
               <div className="flex items-center gap-3">
-                <div
-                  className="w-12 h-12 rounded-lg border-2 border-gray-200 shadow-sm"
-                  style={{ backgroundColor: newCategory.color }}
-                />
                 <Input
-                  type="color"
-                  value={newCategory.color}
-                  onChange={(e) =>
-                    setNewCategory({ ...newCategory, color: e.target.value })
-                  }
-                  className="w-20 h-12 p-1 cursor-pointer"
+                  id="order"
+                  {...register("order", {
+                    required: "Category Order is required",
+                    value: number,
+                    min: { value: 1, message: " min order value should be 1 " },
+                  })}
+                  placeholder="Sequencial Order of the Category"
+                  className="w-full"
+                  value={`${categories?.length}` + 1}
+                  required
                 />
-                <span className="text-sm text-gray-500 font-mono">
-                  {newCategory.color}
-                </span>
               </div>
-              {/* <div className="grid grid-cols-8 gap-2 mt-2">
-                {colorOptions.map((color) => (
-                  <button
-                    key={color}
-                    type="button"
-                    className={`w-8 h-8 rounded-md border-2 transition-all hover:scale-110 ${
-                      newCategory.color === color
-                        ? "border-gray-400 shadow-md"
-                        : "border-gray-200"
-                    }`}
-                    style={{ backgroundColor: color }}
-                    onClick={() => setNewCategory({ ...newCategory, color })}
+              {errors.order && (
+                <p className="text-red-500 text-sm font-bold">{errors.order}</p>
+              )}
+            </div>
+            <Controller
+              control={control}
+              name="status"
+              defaultValue={1}
+              render={({ field: { onChange, value } }) => (
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="status" className="text-sm font-medium">
+                    Active Status
+                  </Label>
+                  <Switch
+                    id="status"
+                    checked={Boolean(value)}
+                    onCheckedChange={(checked) => onChange(checked ? 1 : 0)}
                   />
-                ))}
-              </div> */}
-            </div>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="status" className="text-sm font-medium">
-                Active Status
-              </Label>
-              <Switch
-                id="status"
-                checked={newCategory.status === "Active"}
-                onCheckedChange={(checked) =>
-                  setNewCategory({
-                    ...newCategory,
-                    status: checked ? "Active" : "Inactive",
-                  })
-                }
-              />
-            </div>
+                </div>
+              )}
+            />
           </div>
           <DialogFooter>
             <Button
@@ -605,8 +549,8 @@ export default function CategoriesManagement() {
               Cancel
             </Button>
             <Button
-              onClick={handleAddCategory}
-              disabled={!newCategory.name.trim() || isSubmitting}
+              onClick={handleSubmit(handleAddCategory)}
+              disabled={isSubmitting}
               className="bg-primary hover:bg-primary/90"
             >
               {isSubmitting ? "Creating..." : "Create Category"}
@@ -616,129 +560,6 @@ export default function CategoriesManagement() {
       </Dialog>
 
       {/* Edit Category Dialog */}
-      {isEditDialogOpen && (
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle className="font-oswald text-xl">
-                Edit Category
-              </DialogTitle>
-              <DialogDescription>
-                Update the details for this category.
-              </DialogDescription>
-            </DialogHeader>
-            {currentCategory && (
-              <div className="grid gap-6 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-name" className="text-sm font-medium">
-                    Category Name *
-                  </Label>
-                  <Input
-                    id="edit-name"
-                    value={currentCategory.name}
-                    onChange={(e) =>
-                      setCurrentCategory({
-                        ...currentCategory,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label
-                    htmlFor="edit-description"
-                    className="text-sm font-medium"
-                  >
-                    Description
-                  </Label>
-                  <Textarea
-                    id="edit-description"
-                    value={currentCategory.description}
-                    onChange={(e) =>
-                      setCurrentCategory({
-                        ...currentCategory,
-                        description: e.target.value,
-                      })
-                    }
-                    rows={3}
-                  />
-                </div>
-                <div className="grid gap-3">
-                  <Label className="text-sm font-medium">Category Color</Label>
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="w-12 h-12 rounded-lg border-2 border-gray-200 shadow-sm"
-                      style={{ backgroundColor: currentCategory.color }}
-                    />
-                    <Input
-                      type="color"
-                      value={currentCategory.color}
-                      onChange={(e) =>
-                        setCurrentCategory({
-                          ...currentCategory,
-                          color: e.target.value,
-                        })
-                      }
-                      className="w-20 h-12 p-1 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-500 font-mono">
-                      {currentCategory.color}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-8 gap-2 mt-2">
-                    {colorOptions.map((color) => (
-                      <button
-                        key={color}
-                        type="button"
-                        className={`w-8 h-8 rounded-md border-2 transition-all hover:scale-110 ${
-                          currentCategory.color === color
-                            ? "border-gray-400 shadow-md"
-                            : "border-gray-200"
-                        }`}
-                        style={{ backgroundColor: color }}
-                        onClick={() =>
-                          setCurrentCategory({ ...currentCategory, color })
-                        }
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="edit-status" className="text-sm font-medium">
-                    Active Status
-                  </Label>
-                  <Switch
-                    id="edit-status"
-                    checked={currentCategory.status === "Active"}
-                    onCheckedChange={(checked) =>
-                      setCurrentCategory({
-                        ...currentCategory,
-                        status: checked ? "Active" : "Inactive",
-                      })
-                    }
-                  />
-                </div>
-              </div>
-            )}
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setIsEditDialogOpen(false)}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleEditCategory}
-                disabled={isSubmitting}
-                className="bg-primary hover:bg-primary/90"
-              >
-                {isSubmitting ? "Saving..." : "Save Changes"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
   );
 }

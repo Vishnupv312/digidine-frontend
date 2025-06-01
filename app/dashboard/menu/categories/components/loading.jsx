@@ -13,7 +13,7 @@ export default function CategoriesLoading() {
         </div>
       </div>
 
-      <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="bg-white p-6 rounded-lg shadow-xs border">
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <Skeleton className="h-10 w-full" />
         </div>

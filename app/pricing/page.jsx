@@ -354,7 +354,7 @@ export default function Pricing() {
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}
-                  className="bg-white rounded-lg shadow-sm"
+                  className="bg-white rounded-lg shadow-xs"
                 >
                   <AccordionTrigger className="px-6 py-4 text-left font-medium text-primary">
                     {faq.question}

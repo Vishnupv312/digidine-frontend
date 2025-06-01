@@ -283,7 +283,7 @@ export default function FAQ() {
                   >
                     <AccordionItem
                       value={`item-${categoryIndex}-${faqIndex}`}
-                      className="bg-white rounded-lg shadow-sm"
+                      className="bg-white rounded-lg shadow-xs"
                     >
                       <AccordionTrigger className="px-6 py-4 text-left font-medium text-primary">
                         {faq.question}

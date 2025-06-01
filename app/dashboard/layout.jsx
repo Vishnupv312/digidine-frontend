@@ -95,7 +95,7 @@ export default function DashboardLayout({ children }) {
     <div className="flex min-h-screen bg-gray-50">
       {/* Desktop Sidebar */}
       <aside
-        className={`fixed inset-y-0 z-50 flex flex-col bg-white border-r shadow-sm transition-all duration-300 ease-in-out ${
+        className={`fixed inset-y-0 z-50 flex flex-col bg-white border-r shadow-xs transition-all duration-300 ease-in-out ${
           isSidebarOpen ? "w-64" : "w-20"
         } hidden md:flex`}
       >

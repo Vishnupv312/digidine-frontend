@@ -39,7 +39,17 @@ import {
   ChevronRight,
 } from "lucide-react";
 
+import { useAuth } from "@/context/AuthProvider";
+import { useRouter } from "next/navigation";
+
 export default function MenuManagement() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
+  if (!user) {
+    toast.error("Login to Access this page ");
+    router.push("/login");
+  }
+
   // Sample menu items data
   const initialMenuItems = [
     {
@@ -235,7 +245,7 @@ export default function MenuManagement() {
         initial="hidden"
         animate="visible"
         variants={fadeIn}
-        className="bg-white p-6 rounded-lg shadow-sm border"
+        className="bg-white p-6 rounded-lg shadow-xs border"
       >
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -351,7 +361,7 @@ export default function MenuManagement() {
                     </TableCell>
                     <TableCell>
                       <Badge
-                        variant={item.featured ? "secondary" : "outline"}
+                        variant={item.featured ? "secondary" : "outline-solid"}
                         className="cursor-pointer py-2 px-1 text-white font-semibold"
                         onClick={() => toggleFeatured(item.id)}
                       >
