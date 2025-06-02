@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -41,148 +41,87 @@ import {
 
 import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from "next/navigation";
-
+import toast from "react-hot-toast";
+import axios from "axios";
+import { type } from "os";
 export default function MenuManagement() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  if (!user) {
-    toast.error("Login to Access this page ");
-    router.push("/login");
-  }
 
   // Sample menu items data
-  const initialMenuItems = [
-    {
-      id: 1,
-      name: "Grilled Salmon",
-      category: "Main Course",
-      price: 24.99,
-      status: "Active",
-      featured: true,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 2,
-      name: "Caesar Salad",
-      category: "Appetizers",
-      price: 12.99,
-      status: "Active",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 3,
-      name: "Chocolate Lava Cake",
-      category: "Desserts",
-      price: 9.99,
-      status: "Active",
-      featured: true,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 4,
-      name: "Beef Burger",
-      category: "Main Course",
-      price: 18.99,
-      status: "Active",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 5,
-      name: "Mojito",
-      category: "Beverages",
-      price: 8.99,
-      status: "Active",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 6,
-      name: "Garlic Bread",
-      category: "Appetizers",
-      price: 6.99,
-      status: "Inactive",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 7,
-      name: "Pasta Carbonara",
-      category: "Main Course",
-      price: 19.99,
-      status: "Active",
-      featured: true,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 8,
-      name: "Cheesecake",
-      category: "Desserts",
-      price: 8.99,
-      status: "Active",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 9,
-      name: "Iced Tea",
-      category: "Beverages",
-      price: 4.99,
-      status: "Active",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-    {
-      id: 10,
-      name: "Seasonal Soup",
-      category: "Appetizers",
-      price: 7.99,
-      status: "Inactive",
-      featured: false,
-      image: "/placeholder.svg",
-    },
-  ];
+  const fetchFoodItems = async () => {
+    axios
+      .get(`${process.env.NEXT_PUBLIC_BASE_URL}api/menu/fetch-food-items`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        setMenuItems(res.data.data);
+      })
+      .catch((err) => {
+        console.log(err);
+        toast.error(err.response.data.message);
+      });
+  };
 
-  const [menuItems, setMenuItems] = useState(initialMenuItems);
+  const fetchCategories = async () => {
+    axios
+      .get(`${process.env.NEXT_PUBLIC_BASE_URL}api/menu/fetch-categories`, {
+        withCredentials: true,
+      })
+      .then((res) => {
+        setCategories(res.data.data);
+      })
+      .catch((err) => {
+        console.log(err.message);
+      });
+  };
+
+  useEffect(() => {
+    fetchFoodItems();
+    fetchCategories();
+  }, []);
+
+  const [menuItems, setMenuItems] = useState();
+  const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  console.log(typeof categories);
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // Filter menu items based on search term and filters
-  const filteredItems = menuItems.filter((item) => {
-    const matchesSearch = item.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || item.category === categoryFilter;
-    const matchesStatus =
-      statusFilter === "all" || item.status === statusFilter;
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  // const filteredItems = menuItems.filter((item) => {
+  //   const matchesSearch = item.name
+  //     .toLowerCase()
+  //     .includes(searchTerm.toLowerCase());
+  //   const matchesCategory =
+  //     categoryFilter === "all" || item.category === categoryFilter;
+  //   const matchesStatus =
+  //     statusFilter === "all" || item.status === statusFilter;
+  //   return matchesSearch && matchesCategory && matchesStatus;
+  // });
 
   // Sort menu items
-  const sortedItems = [...filteredItems].sort((a, b) => {
-    if (!sortConfig.key) return 0;
+  // const sortedItems = [...filteredItems].sort((a, b) => {
+  //   if (!sortConfig.key) return 0;
 
-    if (a[sortConfig.key] < b[sortConfig.key]) {
-      return sortConfig.direction === "ascending" ? -1 : 1;
-    }
-    if (a[sortConfig.key] > b[sortConfig.key]) {
-      return sortConfig.direction === "ascending" ? 1 : -1;
-    }
-    return 0;
-  });
+  //   if (a[sortConfig.key] < b[sortConfig.key]) {
+  //     return sortConfig.direction === "ascending" ? -1 : 1;
+  //   }
+  //   if (a[sortConfig.key] > b[sortConfig.key]) {
+  //     return sortConfig.direction === "ascending" ? 1 : -1;
+  //   }
+  //   return 0;
+  // });
 
   // Request sort
-  const requestSort = (key) => {
-    let direction = "ascending";
-    if (sortConfig.key === key && sortConfig.direction === "ascending") {
-      direction = "descending";
-    }
-    setSortConfig({ key, direction });
-  };
+  // const requestSort = (key) => {
+  //   let direction = "ascending";
+  //   if (sortConfig.key === key && sortConfig.direction === "ascending") {
+  //     direction = "descending";
+  //   }
+  //   setSortConfig({ key, direction });
+  // };
 
   // Delete menu item
   const deleteMenuItem = (id) => {
@@ -272,10 +211,11 @@ export default function MenuManagement() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Appetizers">Appetizers</SelectItem>
-                <SelectItem value="Main Course">Main Course</SelectItem>
-                <SelectItem value="Desserts">Desserts</SelectItem>
-                <SelectItem value="Beverages">Beverages</SelectItem>
+                {categories.map((item) => (
+                  <SelectItem key={item._id} value={item.name}>
+                    {item.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -333,9 +273,9 @@ export default function MenuManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sortedItems.length > 0 ? (
-                sortedItems.map((item) => (
-                  <TableRow key={item.id}>
+              {menuItems?.length > 0 ? (
+                menuItems?.map((item) => (
+                  <TableRow key={item._id}>
                     <TableCell>
                       <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
                         <img
@@ -346,27 +286,25 @@ export default function MenuManagement() {
                       </div>
                     </TableCell>
                     <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell>{item.category}</TableCell>
+                    <TableCell>{item.category.name}</TableCell>
                     <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={
-                          item.status === "Active" ? "default" : "secondary"
-                        }
+                        variant={item.status == true ? "default" : "secondary"}
                         className="cursor-pointer py-2 px-1 text-white font-semibold"
-                        onClick={() => toggleStatus(item.id)}
+                        onClick={() => toggleStatus(item._id)}
                       >
                         {item.status}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge
+                      {/* <Badge
                         variant={item.featured ? "secondary" : "outline-solid"}
                         className="cursor-pointer py-2 px-1 text-white font-semibold"
                         onClick={() => toggleFeatured(item.id)}
                       >
                         {item.featured ? "Featured" : "Regular"}
-                      </Badge>
+                      </Badge> */}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -387,7 +325,7 @@ export default function MenuManagement() {
                           </DropdownMenuItem>
                           <DropdownMenuItem>
                             <Link
-                              href={`/dashboard/menu/${item.id}/edit`}
+                              href={`/dashboard/menu/${item._id}/edit`}
                               className="flex w-full items-center"
                             >
                               <Edit className="mr-2 h-4 w-4" />
@@ -419,7 +357,7 @@ export default function MenuManagement() {
 
         <div className="flex items-center justify-between mt-4">
           <div className="text-sm text-gray-500">
-            Showing {sortedItems.length} of {menuItems.length} items
+            {/* Showing {sortedItems.length} of {menuItems.length} items */}
           </div>
           <div className="flex items-center space-x-2">
             <Button variant="outline" size="sm">
