@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Menu,
@@ -18,8 +18,8 @@ import {
   Bell,
   Search,
   User,
-} from "lucide-react"
-import { Button } from "@/components/ui/button"
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,15 +27,15 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Suspense } from "react"
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Suspense } from "react";
 
 export default function DashboardLayout({ children }) {
-  const pathname = usePathname()
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true)
-  const [submenuStates, setSubmenuStates] = useState({})
+  const pathname = usePathname();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [submenuStates, setSubmenuStates] = useState({});
 
   const sidebarItems = [
     {
@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/menu",
       icon: ShoppingBag,
       submenu: [
-        { title: "All Items", href: "/dashboard/menu" },
+        { title: "Food Items", href: "/dashboard/menu" },
         { title: "Categories", href: "/dashboard/menu/categories" },
         { title: "Special Offers", href: "/dashboard/menu/offers" },
       ],
@@ -78,18 +78,18 @@ export default function DashboardLayout({ children }) {
       href: "/dashboard/settings",
       icon: Settings,
     },
-  ]
+  ];
 
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen)
-  }
+    setIsSidebarOpen(!isSidebarOpen);
+  };
 
   const toggleSubmenu = (index) => {
     setSubmenuStates((prevState) => ({
       ...prevState,
       [index]: !prevState[index],
-    }))
-  }
+    }));
+  };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -102,9 +102,18 @@ export default function DashboardLayout({ children }) {
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <Link href="/dashboard" className="flex items-center gap-2">
             <QrCode className="h-6 w-6 text-primary" />
-            {isSidebarOpen && <span className="text-xl font-bold text-primary accent-font">DigiDine</span>}
+            {isSidebarOpen && (
+              <span className="text-xl font-bold text-primary accent-font">
+                DigiDine
+              </span>
+            )}
           </Link>
-          <Button variant="ghost" size="icon" onClick={toggleSidebar} className="hidden md:flex">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="hidden md:flex"
+          >
             <Menu className="h-5 w-5" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
@@ -113,8 +122,9 @@ export default function DashboardLayout({ children }) {
         <nav className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1 px-2">
             {sidebarItems.map((item, index) => {
-              const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-              const isSubmenuOpen = submenuStates[index] || false
+              const isActive =
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const isSubmenuOpen = submenuStates[index] || false;
 
               return (
                 <li key={index}>
@@ -123,15 +133,21 @@ export default function DashboardLayout({ children }) {
                       <button
                         onClick={() => toggleSubmenu(index)}
                         className={`flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                          isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
+                          isActive
+                            ? "bg-primary text-white"
+                            : "text-gray-700 hover:bg-gray-100"
                         } ${!isSidebarOpen && "justify-center"}`}
                       >
                         <item.icon className="h-5 w-5 mr-2 shrink-0" />
                         {isSidebarOpen && (
                           <>
-                            <span className="flex-1 text-left">{item.title}</span>
+                            <span className="flex-1 text-left">
+                              {item.title}
+                            </span>
                             <ChevronDown
-                              className={`h-4 w-4 transition-transform ${isSubmenuOpen ? "rotate-180" : ""}`}
+                              className={`h-4 w-4 transition-transform ${
+                                isSubmenuOpen ? "rotate-180" : ""
+                              }`}
                             />
                           </>
                         )}
@@ -139,7 +155,7 @@ export default function DashboardLayout({ children }) {
                       {isSidebarOpen && isSubmenuOpen && (
                         <ul className="pl-10 space-y-1">
                           {item.submenu.map((subitem, subindex) => {
-                            const isSubActive = pathname === subitem.href
+                            const isSubActive = pathname === subitem.href;
                             return (
                               <li key={subindex}>
                                 <Link
@@ -153,7 +169,7 @@ export default function DashboardLayout({ children }) {
                                   {subitem.title}
                                 </Link>
                               </li>
-                            )
+                            );
                           })}
                         </ul>
                       )}
@@ -162,15 +178,19 @@ export default function DashboardLayout({ children }) {
                     <Link
                       href={item.href}
                       className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
-                        isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
+                        isActive
+                          ? "bg-primary text-white"
+                          : "text-gray-700 hover:bg-gray-100"
                       } ${!isSidebarOpen && "justify-center"}`}
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
-                      {isSidebarOpen && <span className="ml-2">{item.title}</span>}
+                      {isSidebarOpen && (
+                        <span className="ml-2">{item.title}</span>
+                      )}
                     </Link>
                   )}
                 </li>
-              )
+              );
             })}
           </ul>
         </nav>
@@ -242,14 +262,18 @@ export default function DashboardLayout({ children }) {
           <div className="flex items-center h-16 px-4 border-b">
             <Link href="/dashboard" className="flex items-center gap-2">
               <QrCode className="h-6 w-6 text-primary" />
-              <span className="text-xl font-bold text-primary accent-font">DigiDine</span>
+              <span className="text-xl font-bold text-primary accent-font">
+                DigiDine
+              </span>
             </Link>
           </div>
           <nav className="flex-1 overflow-y-auto py-4">
             <ul className="space-y-1 px-2">
               {sidebarItems.map((item, index) => {
-                const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                const isSubmenuOpen = submenuStates[index] || false
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(`${item.href}/`);
+                const isSubmenuOpen = submenuStates[index] || false;
 
                 return (
                   <li key={index}>
@@ -258,19 +282,23 @@ export default function DashboardLayout({ children }) {
                         <button
                           onClick={() => toggleSubmenu(index)}
                           className={`flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                            isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
+                            isActive
+                              ? "bg-primary text-white"
+                              : "text-gray-700 hover:bg-gray-100"
                           }`}
                         >
                           <item.icon className="h-5 w-5 mr-2" />
                           <span className="flex-1 text-left">{item.title}</span>
                           <ChevronDown
-                            className={`h-4 w-4 transition-transform ${isSubmenuOpen ? "rotate-180" : ""}`}
+                            className={`h-4 w-4 transition-transform ${
+                              isSubmenuOpen ? "rotate-180" : ""
+                            }`}
                           />
                         </button>
                         {isSubmenuOpen && (
                           <ul className="pl-10 space-y-1">
                             {item.submenu.map((subitem, subindex) => {
-                              const isSubActive = pathname === subitem.href
+                              const isSubActive = pathname === subitem.href;
                               return (
                                 <li key={subindex}>
                                   <Link
@@ -284,7 +312,7 @@ export default function DashboardLayout({ children }) {
                                     {subitem.title}
                                   </Link>
                                 </li>
-                              )
+                              );
                             })}
                           </ul>
                         )}
@@ -293,7 +321,9 @@ export default function DashboardLayout({ children }) {
                       <Link
                         href={item.href}
                         className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
-                          isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
+                          isActive
+                            ? "bg-primary text-white"
+                            : "text-gray-700 hover:bg-gray-100"
                         }`}
                       >
                         <item.icon className="h-5 w-5 mr-2" />
@@ -301,7 +331,7 @@ export default function DashboardLayout({ children }) {
                       </Link>
                     )}
                   </li>
-                )
+                );
               })}
             </ul>
           </nav>
@@ -322,7 +352,10 @@ export default function DashboardLayout({ children }) {
                 </Button>
               </Link>
               <Link href="/logout">
-                <Button variant="outline" className="w-full justify-start text-red-600">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start text-red-600"
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </Button>
@@ -333,7 +366,11 @@ export default function DashboardLayout({ children }) {
       </Sheet>
 
       {/* Main Content */}
-      <div className={`flex-1 transition-all duration-300 ease-in-out ${isSidebarOpen ? "md:ml-64" : "md:ml-20"}`}>
+      <div
+        className={`flex-1 transition-all duration-300 ease-in-out ${
+          isSidebarOpen ? "md:ml-64" : "md:ml-20"
+        }`}
+      >
         {/* Top Navigation */}
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-white px-4 md:px-6">
           <div className="flex flex-1 items-center gap-4">
@@ -348,14 +385,18 @@ export default function DashboardLayout({ children }) {
                 <div className="flex items-center h-16 px-4 border-b">
                   <Link href="/dashboard" className="flex items-center gap-2">
                     <QrCode className="h-6 w-6 text-primary" />
-                    <span className="text-xl font-bold text-primary accent-font">DigiDine</span>
+                    <span className="text-xl font-bold text-primary accent-font">
+                      DigiDine
+                    </span>
                   </Link>
                 </div>
                 <nav className="flex-1 overflow-y-auto py-4">
                   <ul className="space-y-1 px-2">
                     {sidebarItems.map((item, index) => {
-                      const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                      const isSubmenuOpen = submenuStates[index] || false
+                      const isActive =
+                        pathname === item.href ||
+                        pathname.startsWith(`${item.href}/`);
+                      const isSubmenuOpen = submenuStates[index] || false;
 
                       return (
                         <li key={index}>
@@ -364,19 +405,26 @@ export default function DashboardLayout({ children }) {
                               <button
                                 onClick={() => toggleSubmenu(index)}
                                 className={`flex items-center w-full px-3 py-2 rounded-md text-sm transition-colors ${
-                                  isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
+                                  isActive
+                                    ? "bg-primary text-white"
+                                    : "text-gray-700 hover:bg-gray-100"
                                 }`}
                               >
                                 <item.icon className="h-5 w-5 mr-2" />
-                                <span className="flex-1 text-left">{item.title}</span>
+                                <span className="flex-1 text-left">
+                                  {item.title}
+                                </span>
                                 <ChevronDown
-                                  className={`h-4 w-4 transition-transform ${isSubmenuOpen ? "rotate-180" : ""}`}
+                                  className={`h-4 w-4 transition-transform ${
+                                    isSubmenuOpen ? "rotate-180" : ""
+                                  }`}
                                 />
                               </button>
                               {isSubmenuOpen && (
                                 <ul className="pl-10 space-y-1">
                                   {item.submenu.map((subitem, subindex) => {
-                                    const isSubActive = pathname === subitem.href
+                                    const isSubActive =
+                                      pathname === subitem.href;
                                     return (
                                       <li key={subindex}>
                                         <Link
@@ -390,7 +438,7 @@ export default function DashboardLayout({ children }) {
                                           {subitem.title}
                                         </Link>
                                       </li>
-                                    )
+                                    );
                                   })}
                                 </ul>
                               )}
@@ -399,7 +447,9 @@ export default function DashboardLayout({ children }) {
                             <Link
                               href={item.href}
                               className={`flex items-center px-3 py-2 rounded-md text-sm transition-colors ${
-                                isActive ? "bg-primary text-white" : "text-gray-700 hover:bg-gray-100"
+                                isActive
+                                  ? "bg-primary text-white"
+                                  : "text-gray-700 hover:bg-gray-100"
                               }`}
                             >
                               <item.icon className="h-5 w-5 mr-2" />
@@ -407,7 +457,7 @@ export default function DashboardLayout({ children }) {
                             </Link>
                           )}
                         </li>
-                      )
+                      );
                     })}
                   </ul>
                 </nav>
@@ -423,12 +473,18 @@ export default function DashboardLayout({ children }) {
                   </div>
                   <div className="mt-4 space-y-2">
                     <Link href="/dashboard/profile">
-                      <Button variant="outline" className="w-full justify-start">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start"
+                      >
                         Profile
                       </Button>
                     </Link>
                     <Link href="/logout">
-                      <Button variant="outline" className="w-full justify-start text-red-600">
+                      <Button
+                        variant="outline"
+                        className="w-full justify-start text-red-600"
+                      >
                         <LogOut className="mr-2 h-4 w-4" />
                         Logout
                       </Button>
@@ -439,7 +495,11 @@ export default function DashboardLayout({ children }) {
             </Sheet>
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
-              <Input type="search" placeholder="Search..." className="w-full pl-8 md:w-[300px] bg-gray-50" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="w-full pl-8 md:w-[300px] bg-gray-50"
+              />
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -505,5 +565,5 @@ export default function DashboardLayout({ children }) {
         <Menu className="h-5 w-5" />
       </Button>
     </div>
-  )
+  );
 }

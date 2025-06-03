@@ -56,6 +56,7 @@ export default function MenuManagement() {
       })
       .then((res) => {
         setMenuItems(res.data.data);
+        setFilteredItems(res.data.data);
       })
       .catch((err) => {
         console.log(err);
@@ -84,11 +85,19 @@ export default function MenuManagement() {
   const [menuItems, setMenuItems] = useState();
   const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  console.log(typeof categories);
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState();
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
+  const [filteredItems, setFilteredItems] = useState([]);
+
+  useEffect(() => {
+    if (statusFilter == "Active") {
+      setFilteredItems(categories.filter((item) => item.status == true));
+    }
+
+    console.log(filteredItems);
+  }, [statusFilter]);
   // Filter menu items based on search term and filters
   // const filteredItems = menuItems.filter((item) => {
   //   const matchesSearch = item.name
@@ -273,8 +282,8 @@ export default function MenuManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {menuItems?.length > 0 ? (
-                menuItems?.map((item) => (
+              {filteredItems?.length > 0 ? (
+                filteredItems?.map((item) => (
                   <TableRow key={item._id}>
                     <TableCell>
                       <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
