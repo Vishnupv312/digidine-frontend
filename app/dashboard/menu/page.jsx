@@ -43,10 +43,17 @@ import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import axios from "axios";
-import { type } from "os";
+
 export default function MenuManagement() {
   const { user, loading } = useAuth();
   const router = useRouter();
+  const [menuItems, setMenuItems] = useState();
+  const [categories, setCategories] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState();
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
   // Sample menu items data
   const fetchFoodItems = async () => {
@@ -56,7 +63,6 @@ export default function MenuManagement() {
       })
       .then((res) => {
         setMenuItems(res.data.data);
-        setFilteredItems(res.data.data);
       })
       .catch((err) => {
         console.log(err);
@@ -82,55 +88,36 @@ export default function MenuManagement() {
     fetchCategories();
   }, []);
 
-  const [menuItems, setMenuItems] = useState();
-  const [categories, setCategories] = useState([]);
-  const [searchTerm, setSearchTerm] = useState("");
-
-  const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState();
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-  const [filteredItems, setFilteredItems] = useState([]);
-
   useEffect(() => {
+    if (!menuItems) return;
+    let updatedItems = [...menuItems];
     if (statusFilter == "Active") {
-      setFilteredItems(categories.filter((item) => item.status == true));
+      updatedItems = menuItems.filter((item) => item.status == true);
+      console.log(filteredItems);
+    }
+    if (statusFilter == "Inactive") {
+      updatedItems = menuItems.filter((item) => item.status == false);
+      console.log(filteredItems);
+    }
+    if (categoryFilter !== "all") {
+      let category = categories.filter(
+        (item) => item.category == categoryFilter
+      );
+      console.log(category);
+      updatedItems = menuItems.filter((item) => item.category == category._id);
+      console.log(updatedItems);
+    }
+    if (searchTerm.trim()) {
+      console.log(searchTerm);
+      updatedItems = menuItems.filter((item) => {
+        console.log(item);
+        return item.name?.toLowerCase().includes(searchTerm.toLowerCase());
+      });
     }
 
+    setFilteredItems(updatedItems);
     console.log(filteredItems);
-  }, [statusFilter]);
-  // Filter menu items based on search term and filters
-  // const filteredItems = menuItems.filter((item) => {
-  //   const matchesSearch = item.name
-  //     .toLowerCase()
-  //     .includes(searchTerm.toLowerCase());
-  //   const matchesCategory =
-  //     categoryFilter === "all" || item.category === categoryFilter;
-  //   const matchesStatus =
-  //     statusFilter === "all" || item.status === statusFilter;
-  //   return matchesSearch && matchesCategory && matchesStatus;
-  // });
-
-  // Sort menu items
-  // const sortedItems = [...filteredItems].sort((a, b) => {
-  //   if (!sortConfig.key) return 0;
-
-  //   if (a[sortConfig.key] < b[sortConfig.key]) {
-  //     return sortConfig.direction === "ascending" ? -1 : 1;
-  //   }
-  //   if (a[sortConfig.key] > b[sortConfig.key]) {
-  //     return sortConfig.direction === "ascending" ? 1 : -1;
-  //   }
-  //   return 0;
-  // });
-
-  // Request sort
-  // const requestSort = (key) => {
-  //   let direction = "ascending";
-  //   if (sortConfig.key === key && sortConfig.direction === "ascending") {
-  //     direction = "descending";
-  //   }
-  //   setSortConfig({ key, direction });
-  // };
+  }, [statusFilter, categoryFilter, menuItems, searchTerm]);
 
   // Delete menu item
   const deleteMenuItem = (id) => {
@@ -200,9 +187,8 @@ export default function MenuManagement() {
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
             <Input
               type="search"
-              placeholder="Search menu items..."
+              placeholder="Search Food items..."
               className="pl-8 w-full"
-              value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
@@ -282,8 +268,8 @@ export default function MenuManagement() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredItems?.length > 0 ? (
-                filteredItems?.map((item) => (
+              {Array.isArray(filteredItems) && filteredItems.length > 0 ? (
+                filteredItems.map((item) => (
                   <TableRow key={item._id}>
                     <TableCell>
                       <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
@@ -299,14 +285,15 @@ export default function MenuManagement() {
                     <TableCell>${item.price.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge
-                        variant={item.status == true ? "default" : "secondary"}
-                        className="cursor-pointer py-2 px-1 text-white font-semibold"
+                        variant={item.status === true ? "default" : "secondary"}
+                        className="cursor-pointer py-3 px-1 text-white font-semibold"
                         onClick={() => toggleStatus(item._id)}
                       >
-                        {item.status}
+                        <p>{item.status === true ? "Active" : "InActive"}</p>
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      {item.category.description}
                       {/* <Badge
                         variant={item.featured ? "secondary" : "outline-solid"}
                         className="cursor-pointer py-2 px-1 text-white font-semibold"
