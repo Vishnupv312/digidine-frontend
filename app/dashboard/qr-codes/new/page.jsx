@@ -1,16 +1,28 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Slider } from "@/components/ui/slider"
-import { ArrowLeft, Download, QrCode, Share2 } from "lucide-react"
+import { useState } from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Slider } from "@/components/ui/slider";
+import { ArrowLeft, Download, QrCode, Share2 } from "lucide-react";
 
 export default function NewQRCode() {
   const [formData, setFormData] = useState({
@@ -22,39 +34,39 @@ export default function NewQRCode() {
     cornerRadius: 0,
     logoEnabled: false,
     size: 300,
-  })
+  });
 
-  const [activeTab, setActiveTab] = useState("design")
+  const [activeTab, setActiveTab] = useState("design");
 
   const handleChange = (e) => {
-    const { name, value } = e.target
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-    }))
-  }
+    }));
+  };
 
   const handleSliderChange = (name, value) => {
     setFormData((prev) => ({
       ...prev,
       [name]: value[0],
-    }))
-  }
+    }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
+    e.preventDefault();
     // In a real application, you would send this data to your backend
-    console.log("Form submitted:", formData)
+    console.log("Form submitted:", formData);
     // Redirect to QR codes page after successful submission
-    window.location.href = "/dashboard/qr-codes"
-  }
+    window.location.href = "/dashboard/qr-codes";
+  };
 
   const fadeIn = {
     hidden: { opacity: 0, y: 20 },
@@ -63,7 +75,7 @@ export default function NewQRCode() {
       y: 0,
       transition: { duration: 0.5 },
     },
-  }
+  };
 
   return (
     <div>
@@ -74,8 +86,12 @@ export default function NewQRCode() {
           </Button>
         </Link>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Generate QR Code</h1>
-          <p className="text-muted-foreground">Create a new QR code for your restaurant's menu</p>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Generate QR Code
+          </h1>
+          <p className="text-muted-foreground">
+            Create a new QR code for your restaurant's menu
+          </p>
         </div>
       </div>
 
@@ -102,7 +118,12 @@ export default function NewQRCode() {
 
                   <div className="space-y-2">
                     <Label htmlFor="menuType">Menu Type</Label>
-                    <Select value={formData.menuType} onValueChange={(value) => handleSelectChange("menuType", value)}>
+                    <Select
+                      value={formData.menuType}
+                      onValueChange={(value) =>
+                        handleSelectChange("menuType", value)
+                      }
+                    >
                       <SelectTrigger id="menuType">
                         <SelectValue placeholder="Select menu type" />
                       </SelectTrigger>
@@ -138,18 +159,26 @@ export default function NewQRCode() {
                   <CardTitle>QR Code Design</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <Tabs defaultValue="design" onValueChange={setActiveTab} className="w-full">
+                  <Tabs
+                    defaultValue="design"
+                    onValueChange={setActiveTab}
+                    className="w-full"
+                  >
                     <TabsList className="grid w-full grid-cols-2 mb-6">
                       <TabsTrigger value="design">Design</TabsTrigger>
                       <TabsTrigger value="advanced">Advanced</TabsTrigger>
                     </TabsList>
                     <TabsContent value="design" className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="foregroundColor">Foreground Color</Label>
+                        <Label htmlFor="foregroundColor">
+                          Foreground Color
+                        </Label>
                         <div className="flex gap-2">
                           <div
                             className="w-10 h-10 rounded-md border"
-                            style={{ backgroundColor: formData.foregroundColor }}
+                            style={{
+                              backgroundColor: formData.foregroundColor,
+                            }}
                           ></div>
                           <Input
                             id="foregroundColor"
@@ -163,11 +192,15 @@ export default function NewQRCode() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="backgroundColor">Background Color</Label>
+                        <Label htmlFor="backgroundColor">
+                          Background Color
+                        </Label>
                         <div className="flex gap-2">
                           <div
                             className="w-10 h-10 rounded-md border"
-                            style={{ backgroundColor: formData.backgroundColor }}
+                            style={{
+                              backgroundColor: formData.backgroundColor,
+                            }}
                           ></div>
                           <Input
                             id="backgroundColor"
@@ -188,7 +221,9 @@ export default function NewQRCode() {
                             min={100}
                             max={500}
                             step={10}
-                            onValueChange={(value) => handleSliderChange("size", value)}
+                            onValueChange={(value) =>
+                              handleSliderChange("size", value)
+                            }
                           />
                           <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>Small</span>
@@ -207,7 +242,9 @@ export default function NewQRCode() {
                             min={0}
                             max={50}
                             step={5}
-                            onValueChange={(value) => handleSliderChange("cornerRadius", value)}
+                            onValueChange={(value) =>
+                              handleSliderChange("cornerRadius", value)
+                            }
                           />
                           <div className="flex justify-between text-xs text-gray-500 mt-1">
                             <span>Square</span>
@@ -220,7 +257,8 @@ export default function NewQRCode() {
                       <div className="space-y-2">
                         <Label>Additional Settings</Label>
                         <p className="text-sm text-gray-500">
-                          More advanced customization options will be available in future updates.
+                          More advanced customization options will be available
+                          in future updates.
                         </p>
                       </div>
                     </TabsContent>
@@ -272,17 +310,23 @@ export default function NewQRCode() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <h3 className="font-medium mb-1">How to use your QR code</h3>
+                    <h3 className="font-medium mb-1">
+                      How to use your QR code
+                    </h3>
                     <p className="text-sm text-gray-500">
-                      After generating your QR code, you can download it and print it for display in your restaurant.
-                      Place it on tables, at the entrance, or include it in your marketing materials.
+                      After generating your QR code, you can download it and
+                      print it for display in your restaurant. Place it on
+                      tables, at the entrance, or include it in your marketing
+                      materials.
                     </p>
                   </div>
                   <div>
                     <h3 className="font-medium mb-1">QR code best practices</h3>
                     <ul className="text-sm text-gray-500 list-disc pl-5 space-y-1">
                       <li>Ensure your QR code has sufficient contrast</li>
-                      <li>Print at a size of at least 2 x 2 cm (0.8 x 0.8 in)</li>
+                      <li>
+                        Print at a size of at least 2 x 2 cm (0.8 x 0.8 in)
+                      </li>
                       <li>Test your QR code before distributing it</li>
                       <li>Include a call-to-action near the QR code</li>
                     </ul>
@@ -301,5 +345,5 @@ export default function NewQRCode() {
         </form>
       </motion.div>
     </div>
-  )
+  );
 }

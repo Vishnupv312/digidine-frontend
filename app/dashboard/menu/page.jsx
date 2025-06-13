@@ -38,7 +38,8 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-
+import ViewFoodItem from "../../dashboard/menu/view-food-item";
+import EditFoodItem from "../../dashboard/menu/edit-food-item";
 import { useAuth } from "@/context/AuthProvider";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -54,7 +55,8 @@ export default function MenuManagement() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState();
   const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
-
+  const [viewStatus, setViewStatus] = useState(false);
+  const [editStatus, setEditStatus] = useState(false);
   // Sample menu items data
   const fetchFoodItems = async () => {
     axios
@@ -274,7 +276,10 @@ export default function MenuManagement() {
                     <TableCell>
                       <div className="h-10 w-10 rounded-md bg-gray-100 overflow-hidden">
                         <img
-                          src={item.image || "/placeholder.svg"}
+                          src={
+                            `${process.env.NEXT_PUBLIC_BASE_URL}${item.image}` ||
+                            "/placeholder.svg"
+                          }
                           alt={item.name}
                           className="h-full w-full object-cover"
                         />
@@ -311,22 +316,22 @@ export default function MenuManagement() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>
-                            <Link
-                              href={`/dashboard/menu/${item.id}`}
-                              className="flex w-full items-center"
+                            <button
+                              className="flex items-center cursor-pointer"
+                              onClick={() => setViewStatus(true)}
                             >
                               <Eye className="mr-2 h-4 w-4" />
                               View
-                            </Link>
+                            </button>
                           </DropdownMenuItem>
                           <DropdownMenuItem>
-                            <Link
-                              href={`/dashboard/menu/${item._id}/edit`}
-                              className="flex w-full items-center"
+                            <button
+                              className="flex items-center cursor-pointer w-full"
+                              onClick={() => setEditStatus(true)}
                             >
                               <Edit className="mr-2 h-4 w-4" />
                               Edit
-                            </Link>
+                            </button>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
@@ -368,6 +373,8 @@ export default function MenuManagement() {
           </div>
         </div>
       </motion.div>
+      <ViewFoodItem viewStatus={viewStatus} setViewStatus={setViewStatus} />
+      <EditFoodItem editStatus={editStatus} setEditStatus={setEditStatus} />
     </div>
   );
 }

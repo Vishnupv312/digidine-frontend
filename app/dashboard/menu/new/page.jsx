@@ -60,7 +60,7 @@ export default function NewMenuItem() {
     description: "",
     status: true,
     price: "",
-    image: null,
+    image: "",
     category: "",
     isVegeterian: false,
     isNonVegetarian: false,
@@ -68,9 +68,8 @@ export default function NewMenuItem() {
     ingredients: [],
     preparationTime: "",
     featured: false,
-    status: "active",
   });
-  const [tagInput, setTagInput] = useState("");
+  const [ingredientsInput, setIngredientsInput] = useState("");
   const [previewImage, setPreviewImage] = useState(null);
 
   const handleChange = (e) => {
@@ -96,12 +95,15 @@ export default function NewMenuItem() {
   };
 
   const handleAddIngredients = () => {
-    if (tagInput.trim() && !formData.ingredients.includes(tagInput.trim())) {
+    if (
+      ingredientsInput.trim() &&
+      !formData.ingredients.includes(ingredientsInput.trim())
+    ) {
       setFormData((prev) => ({
         ...prev,
-        ingredients: [...prev.ingredients, tagInput.trim()],
+        ingredients: [...prev.ingredients, ingredientsInput.trim()],
       }));
-      setTagInput("");
+      setIngredientsInput("");
     }
   };
 
@@ -137,7 +139,12 @@ export default function NewMenuItem() {
       .post(
         `${process.env.NEXT_PUBLIC_BASE_URL}api/menu/add-food-item`,
         payload,
-        { withCredentials: true }
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       )
       .then((res) => {
         toast.success(res.data.message);
@@ -292,8 +299,8 @@ export default function NewMenuItem() {
                     <div className="flex gap-2">
                       <Input
                         placeholder="Add The main Ingredients (e.g. Paneer, Spices, Chicken )"
-                        value={tagInput}
-                        onChange={(e) => setTagInput(e.target.value)}
+                        value={ingredientsInput}
+                        onChange={(e) => setIngredientsInput(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") {
                             e.preventDefault();
