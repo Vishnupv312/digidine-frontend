@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Card,
@@ -25,141 +25,49 @@ import {
   Crown,
   Zap,
 } from "lucide-react";
-
+import toast from "react-hot-toast";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 export default function Billing() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [planData, setPlanData] = useState([]);
+  const router = useRouter();
+  useEffect(() => {
+    const FetchPlans = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/fetch-plans`,
+          { withCredentials: true }
+        );
+        console.log("Fetched plans:", response.data);
+
+        setPlanData(response.data);
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Error fetching plans:", err);
+        toast.error(err?.response?.data?.message || "Failed to fetch plans");
+      }
+    };
+
+    FetchPlans();
+  }, []);
 
   // Mock billing data
-  const billingData = {
-    currentPlan: {
-      name: "Pro Plan",
-      price: 1,
-      currency: "INR",
-      interval: "month",
-      features: [
-        "Unlimited QR codes",
-        "Advanced analytics",
-        "Custom branding",
-        "Priority support",
-        "Export data",
-      ],
-      nextBilling: "2024-01-15",
-      status: "active",
-    },
-    paymentHistory: [
-      {
-        id: "pay_123456789",
-        amount: 1,
-        currency: "INR",
-        status: "success",
-        date: "2023-12-15",
-        description: "Pro Plan - Monthly",
-        invoice: "INV-2023-001",
-        method: "UPI",
-      },
-      {
-        id: "pay_123456788",
-        amount: 1,
-        currency: "INR",
-        status: "success",
-        date: "2023-11-15",
-        description: "Pro Plan - Monthly",
-        invoice: "INV-2023-002",
-        method: "Credit Card",
-      },
-      {
-        id: "pay_123456787",
-        amount: 1,
-        currency: "INR",
-        status: "failed",
-        date: "2023-10-15",
-        description: "Pro Plan - Monthly",
-        invoice: "INV-2023-003",
-        method: "Net Banking",
-      },
-      {
-        id: "pay_123456786",
-        amount: 999,
-        currency: "INR",
-        status: "success",
-        date: "2023-09-15",
-        description: "Pro Plan - Monthly",
-        invoice: "INV-2023-004",
-        method: "UPI",
-      },
-    ],
-    plans: [
-      {
-        name: "Basic",
-        price: 1,
-        currency: "INR",
-        interval: "month",
-        features: [
-          "1 QR code",
-          "Basic analytics",
-          "Standard support",
-          "Menu updates",
-        ],
-        popular: false,
-      },
-      {
-        name: "Pro",
-        price: 1,
-        currency: "INR",
-        interval: "month",
-        features: [
-          "Unlimited QR codes",
-          "Advanced analytics",
-          "Custom branding",
-          "Priority support",
-          "Export data",
-        ],
-        popular: true,
-      },
-      {
-        name: "Enterprise",
-        price: 1,
-        currency: "INR",
-        interval: "month",
-        features: [
-          "Everything in Pro",
-          "White-label solution",
-          "API access",
-          "Dedicated support",
-          "Custom integrations",
-        ],
-        popular: false,
-      },
-    ],
-  };
 
-  const handlePayment = async (planName, amount) => {
+  const handlePayment = async (plan_id) => {
     setIsLoading(true);
 
+    const payload = { plan_id };
     try {
       // Simulate Razorpay payment integration
-      const options = {
-        key: "rzp_test_1234567890", // Replace with your Razorpay key
-        amount: amount * 100, // Amount in paise
-        currency: "INR",
-        name: "DigiDine",
-        description: `${planName} Plan Subscription`,
-        image: "/logo.png",
-        handler: (response) => {
-          console.log("Payment successful:", response);
-          alert(
-            `Payment successful! Payment ID: ${response.razorpay_payment_id}`
-          );
-        },
-        prefill: {
-          name: "John Doe",
-          email: "john@example.com",
-          contact: "9999999999",
-        },
-        theme: {
-          color: "#205781",
-        },
-      };
+      const response = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/create-subscription`,
+        payload,
+        { withCredentials: true }
+      );
+
+      router.push(response.data.short_url);
 
       // In a real app, you would load Razorpay script and create payment
       // const rzp = new window.Razorpay(options)
@@ -210,6 +118,30 @@ export default function Billing() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
+  if (isLoading)
+    return (
+      <>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <>
+            <div className="border border-gray-200 shadow-lg rounded-xl p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto mb-4"></div>
+              <div className="h-10 bg-gray-200 rounded w-2/3 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            </div>
+            <div className="border border-gray-200 shadow-lg rounded-xl p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto mb-4"></div>
+              <div className="h-10 bg-gray-200 rounded w-2/3 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            </div>
+            <div className="border border-gray-200 shadow-lg rounded-xl p-6 animate-pulse">
+              <div className="h-6 bg-gray-200 rounded w-1/2 mx-auto mb-4"></div>
+              <div className="h-10 bg-gray-200 rounded w-2/3 mx-auto mb-2"></div>
+              <div className="h-4 bg-gray-200 rounded w-1/3 mx-auto"></div>
+            </div>
+          </>
+        </div>
+      </>
+    );
   return (
     <motion.div initial="hidden" animate="visible" variants={fadeIn}>
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8">
@@ -247,26 +179,21 @@ export default function Billing() {
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-2xl font-bold">
-                        {billingData.currentPlan.name}
-                      </h3>
-                      <p className="text-gray-600">
-                        ₹{billingData.currentPlan.price}/
-                        {billingData.currentPlan.interval}
-                      </p>
+                      <h3 className="text-2xl font-bold">Current Plan name</h3>
+                      <p className="text-gray-600">₹price/ .interval</p>
                     </div>
                     <Badge
                       variant="default"
                       className="bg-green-100 text-green-800"
                     >
-                      {billingData.currentPlan.status}
+                      currentPlan.status
                     </Badge>
                   </div>
 
                   <div className="space-y-2">
                     <h4 className="font-medium">Plan Features:</h4>
                     <ul className="space-y-1">
-                      {billingData.currentPlan.features.map(
+                      {/* {billingData.currentPlan.features.map(
                         (feature, index) => (
                           <li
                             key={index}
@@ -276,7 +203,7 @@ export default function Billing() {
                             {feature}
                           </li>
                         )
-                      )}
+                      )} */}
                     </ul>
                   </div>
 
@@ -286,11 +213,7 @@ export default function Billing() {
                         <p className="text-sm text-gray-600">
                           Next billing date
                         </p>
-                        <p className="font-medium">
-                          {new Date(
-                            billingData.currentPlan.nextBilling
-                          ).toLocaleDateString()}
-                        </p>
+                        <p className="font-medium">nextBilling</p>
                       </div>
                       <Button variant="outline">
                         <CreditCard className="mr-2 h-4 w-4" />
@@ -357,7 +280,8 @@ export default function Billing() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {billingData.paymentHistory.map((payment) => (
+                payment history
+                {/* {billingData.paymentHistory.map((payment) => (
                   <div
                     key={payment.id}
                     className="flex items-center justify-between p-4 border rounded-lg"
@@ -388,7 +312,7 @@ export default function Billing() {
                       </Button>
                     </div>
                   </div>
-                ))}
+                ))} */}
               </div>
             </CardContent>
           </Card>
@@ -396,53 +320,35 @@ export default function Billing() {
 
         <TabsContent value="plans">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {billingData.plans.map((plan) => (
+            {planData.items.map((plan) => (
               <Card
-                key={plan.name}
-                className={`relative ${
-                  plan.popular ? "border-blue-500 shadow-lg" : ""
-                }`}
+                key={Math.random()}
+                className={`relative ${"border-blue-500 shadow-lg"}`}
               >
-                {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <Badge className="bg-blue-500 text-white">
-                      <Zap className="w-3 h-3 mr-1" />
-                      Most Popular
-                    </Badge>
-                  </div>
-                )}
                 <CardHeader className="text-center">
-                  <CardTitle>{plan.name}</CardTitle>
+                  <CardTitle>{plan.item.name}</CardTitle>
+
                   <div className="text-3xl font-bold">
-                    ₹{plan.price}
+                    ₹{plan.item.amount / plan.item.unit_amount}
                     <span className="text-sm font-normal text-gray-500">
-                      /{plan.interval}
+                      /{plan.period}
                     </span>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <ul className="space-y-2">
-                    {plan.features.map((feature, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        <CheckCircle className="h-4 w-4 text-green-600" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      {plan.item.description}
+                    </div>
+                  </div>{" "}
                   <Button
-                    className="w-full"
+                    className="w-full cursor-pointer"
                     variant={plan.popular ? "default" : "outline"}
-                    onClick={() => handlePayment(plan.name, plan.price)}
+                    onClick={() => handlePayment(plan.id)}
                     disabled={isLoading}
                   >
-                    {isLoading
-                      ? "Processing..."
-                      : plan.name === billingData.currentPlan.name
-                      ? "Current Plan"
-                      : "Upgrade Now"}
+                    {isLoading ? "Processing..." : "Upgrade Now"}
                   </Button>
                 </CardContent>
               </Card>
