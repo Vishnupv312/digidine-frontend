@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,6 +64,10 @@ export default function Login() {
     }
 
     // Redirect to dashboard after successful login
+  };
+
+  const onGoogleLogin = async () => {
+    router.push(`${process.env.NEXT_PUBLIC_BASE_URL}api/auth/google`);
   };
 
   const fadeIn = {
@@ -168,15 +173,10 @@ export default function Login() {
             </TabsContent>
             <TabsContent value="google">
               <Card>
-                <CardContent className="pt-6">
-                  <Button variant="outline" className="w-full">
-                    <img
-                      src="/placeholder.svg?height=20&width=20"
-                      alt="Google"
-                      className="h-5 w-5 mr-2"
-                    />
-                    Log in with Google
-                  </Button>
+                <CardContent className="pt-6 flex items-center justify-center">
+                  <button onClick={onGoogleLogin}>
+                    <img src="/web_neutral_sq_ctn.svg" />
+                  </button>
                 </CardContent>
               </Card>
             </TabsContent>

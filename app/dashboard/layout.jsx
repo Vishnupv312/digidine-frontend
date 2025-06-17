@@ -31,11 +31,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Suspense } from "react";
-
+import { useContext } from "react";
+import { useAuth } from "../../context/AuthProvider";
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [submenuStates, setSubmenuStates] = useState({});
+
+  const { user, isAuthenticated, setIsAuthenticated } = useAuth();
 
   const sidebarItems = [
     {
@@ -90,6 +93,8 @@ export default function DashboardLayout({ children }) {
       [index]: !prevState[index],
     }));
   };
+
+  console.log(user);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -202,8 +207,8 @@ export default function DashboardLayout({ children }) {
                 <User className="h-5 w-5 text-gray-500" />
               </div>
               <div>
-                <p className="text-sm font-medium">John's Restaurant</p>
-                <p className="text-xs text-gray-500">john@example.com</p>
+                <p className="text-sm font-medium">{user?.restaurantName}</p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -243,7 +248,11 @@ export default function DashboardLayout({ children }) {
           ) : (
             <div className="flex justify-center">
               <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="h-5 w-5 text-gray-500" />
+                {user?.ownerProfileImage ? (
+                  <img src={user.ownerProfileImage} />
+                ) : (
+                  <User className="h-5 w-5 text-gray-500" />
+                )}
               </div>
             </div>
           )}
@@ -341,8 +350,8 @@ export default function DashboardLayout({ children }) {
                 <User className="h-5 w-5 text-gray-500" />
               </div>
               <div>
-                <p className="text-sm font-medium">John's Restaurant</p>
-                <p className="text-xs text-gray-500">john@example.com</p>
+                <p className="text-sm font-medium">{user?.restaurantName}</p>
+                <p className="text-xs text-gray-500">{user?.email}</p>
               </div>
             </div>
             <div className="mt-4 space-y-2">
@@ -467,8 +476,10 @@ export default function DashboardLayout({ children }) {
                       <User className="h-5 w-5 text-gray-500" />
                     </div>
                     <div>
-                      <p className="text-sm font-medium">John's Restaurant</p>
-                      <p className="text-xs text-gray-500">john@example.com</p>
+                      <p className="text-sm font-medium">
+                        {user?.restaurantName}
+                      </p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
                     </div>
                   </div>
                   <div className="mt-4 space-y-2">

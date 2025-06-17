@@ -121,7 +121,14 @@ export default function Dashboard() {
   };
 
   const router = useRouter();
-  const { user, setUser, isAuthenticated, loading, setLoading } = useAuth();
+  const {
+    user,
+    setUser,
+    isAuthenticated,
+    setIsAuthenticated,
+    loading,
+    setLoading,
+  } = useAuth();
   useEffect(() => {
     axios
       .get(
@@ -136,9 +143,11 @@ export default function Dashboard() {
         }
       )
       .then((res) => {
-        if (res.data.authenticated) setUser(true);
-        else {
-          setUser(false);
+        if (res.data.authenticated) {
+          setIsAuthenticated(true);
+          setUser(res.data.userData);
+        } else {
+          setIsAuthenticated(false);
           toast.error(" couldn't authenticate the user ", {
             icon: "❌",
             style: {
