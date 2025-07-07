@@ -91,7 +91,7 @@ export default function QRCodes() {
 
       const newQRCode = {
         name: qr.restaurant,
-        url: `${process.env.NEXT_PUBLIC_BASE_URL}${qr.qrImageUrl}`, // complete image URL
+        url: qr.qrImageUrl, // complete image URL
         scans: qr.scanCount,
         created: qr.createdAt,
         foregroundColor: qr.foregroundColor || formData.foregroundColor,

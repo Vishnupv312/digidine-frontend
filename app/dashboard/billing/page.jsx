@@ -28,11 +28,16 @@ import {
 import toast from "react-hot-toast";
 import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../../../context/AuthProvider";
+import Razorpay from "razorpay";
+import Script from "next/script";
+
 export default function Billing() {
   const [isLoading, setIsLoading] = useState(true);
-
+  const { user } = useAuth();
   const [planData, setPlanData] = useState([]);
   const router = useRouter();
+
   useEffect(() => {
     const FetchPlans = async () => {
       try {
@@ -40,7 +45,6 @@ export default function Billing() {
           `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/fetch-plans`,
           { withCredentials: true }
         );
-        console.log("Fetched plans:", response.data);
 
         setPlanData(response.data);
         setIsLoading(false);
@@ -58,31 +62,59 @@ export default function Billing() {
   const handlePayment = async (plan_id) => {
     setIsLoading(true);
 
-    const payload = { plan_id };
     try {
-      // Simulate Razorpay payment integration
-      const response = await axios.post(
+      const res = await axios.post(
         `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/create-subscription`,
-        payload,
+        { plan_id },
         { withCredentials: true }
       );
 
-      router.push(response.data.short_url);
+      const { key, subscription_id } = res.data;
 
-      // In a real app, you would load Razorpay script and create payment
-      // const rzp = new window.Razorpay(options)
-      // rzp.open()
+      const loadRazorpay = () => {
+        return new Promise((resolve, reject) => {
+          if (window.Razorpay) return resolve();
 
-      // For demo purposes, simulate successful payment
-      setTimeout(() => {
-        alert(
-          "Payment simulation completed! In production, this would integrate with Razorpay."
-        );
-        setIsLoading(false);
-      }, 2000);
-    } catch (error) {
-      console.error("Payment failed:", error);
-      alert("Payment failed. Please try again.");
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject("Failed to load Razorpay SDK");
+          document.body.appendChild(script);
+        });
+      };
+
+      await loadRazorpay(); // ✅ Wait for Razorpay to load
+
+      const options = {
+        key,
+        subscription_id,
+        name: "Digidine",
+        description: "Digidine Subscription",
+        image: "/logo.png",
+        handler: function (response) {
+          console.log("Payment successful:", response);
+          axios.post(
+            `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/payment-response`,
+            response,
+            { withCredentials: true }
+          );
+        },
+        modal: {
+          ondismiss: function () {
+            if (confirm("Are you sure you want to close the form?")) {
+              console.log("Checkout form closed by the user");
+            } else {
+              console.log("Complete the payment");
+            }
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.error("Payment failed:", err);
+    } finally {
       setIsLoading(false);
     }
   };

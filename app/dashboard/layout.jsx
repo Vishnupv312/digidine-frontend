@@ -106,11 +106,13 @@ export default function DashboardLayout({ children }) {
       >
         <div className="flex items-center justify-between h-16 px-4 border-b">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <QrCode className="h-6 w-6 text-primary" />
             {isSidebarOpen && (
-              <span className="text-xl font-bold text-primary accent-font">
-                DigiDine
-              </span>
+              <>
+                <QrCode className="h-6 w-6 text-primary" />
+                <span className="text-xl font-bold text-primary accent-font">
+                  DigiDine
+                </span>
+              </>
             )}
           </Link>
           <Button
@@ -119,7 +121,7 @@ export default function DashboardLayout({ children }) {
             onClick={toggleSidebar}
             className="hidden md:flex"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-5 w-5 justify-start" />
             <span className="sr-only">Toggle Sidebar</span>
           </Button>
         </div>

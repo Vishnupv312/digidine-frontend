@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   QrCode,
@@ -9,7 +11,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthProvider";
 export default function Footer() {
-  const isAuthenticated = useAuth;
+  const { isAuthenticated } = useAuth();
+
   return (
     <>
       {!isAuthenticated && (
@@ -95,34 +98,42 @@ export default function Footer() {
                 <ul className="space-y-2">
                   <li>
                     <Link
-                      href="/blog"
+                      href="/pages/privacy-policy"
                       className="text-gray-300 hover:text-accent transition-colors"
                     >
-                      Blog
+                      Privacy Policy
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/faq"
-                      className="text-gray-300 hover:text-accent transition-colors"
+                      href="/pages/privacy-policy"
+                      className="text-gray-300  hover:text-accent transition-colors"
                     >
-                      FAQ
+                      Shipping And Delivery
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/support"
+                      href="/pages/contact-us"
                       className="text-gray-300 hover:text-accent transition-colors"
                     >
-                      Support
+                      Contact Us
                     </Link>
                   </li>
                   <li>
                     <Link
-                      href="/guides"
+                      href="/pages/privacy-policy"
                       className="text-gray-300 hover:text-accent transition-colors"
                     >
-                      Guides
+                      Cancellation And Refund
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      href="/pages/terms-and-condition"
+                      className="text-gray-300 hover:text-accent transition-colors"
+                    >
+                      Terms and Condition
                     </Link>
                   </li>
                 </ul>
