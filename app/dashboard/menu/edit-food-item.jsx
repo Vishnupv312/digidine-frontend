@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { X } from "lucide-react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 export default function EditFoodItem({ editStatus, setEditStatus }) {
@@ -21,6 +22,10 @@ export default function EditFoodItem({ editStatus, setEditStatus }) {
   } = useForm();
 
   const handleSubmit = async () => {};
+
+  const [imagePreview, setImagePreview] = useState();
+
+  const handleImageUpload = () => {};
   return (
     <Dialog open={editStatus} onOpenChange={setEditStatus}>
       <DialogContent className="sm:max-w-[425px]">
@@ -32,23 +37,37 @@ export default function EditFoodItem({ editStatus, setEditStatus }) {
         </button>
 
         <DialogHeader>
-          <DialogTitle>View Food Item</DialogTitle>
-          <DialogDescription>
-            This is where you can view item details.
-          </DialogDescription>
+          <DialogTitle>Edit Food Item</DialogTitle>
+          <DialogDescription>Edit your Food Item Details.</DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 py-4">
+          <div className="grid  grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="img">Select image:</label>
+
+              <input type="file" id="img" name="img" accept="image/*" />
+            </div>
+            <div></div>
+          </div>
           <div className="grid gap-3">
-            <Label htmlFor="name-1">Name *</Label>
+            <Label htmlFor="name-1">Food Item *</Label>
             <Input
               name="name"
               {...register("name", { required: "Food name is required" })}
             />
           </div>
           <div className="grid gap-3">
-            <Label htmlFor="username-1">Username</Label>
-            <Input name="username" />
+            <Label htmlFor="Description-1">Description</Label>
+            <textarea name="Description" />
+          </div>
+          <div className="grid gap-3">
+            <Label htmlFor="price">Price </Label>
+            <Input
+              type="number"
+              name="price"
+              {...register("price", { required: "price is required" })}
+            />
           </div>
         </div>
 

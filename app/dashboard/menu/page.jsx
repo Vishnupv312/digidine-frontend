@@ -122,9 +122,22 @@ export default function MenuManagement() {
   }, [statusFilter, categoryFilter, menuItems, searchTerm]);
 
   // Delete menu item
-  const deleteMenuItem = (id) => {
+  const deleteMenuItem = async (id) => {
     if (confirm("Are you sure you want to delete this menu item?")) {
-      setMenuItems(menuItems.filter((item) => item.id !== id));
+      await axios
+        .delete(
+          `${process.env.NEXT_PUBLIC_BASE_URL}api/menu/delete-food-item?foodId=${id}`,
+          { withCredentials: true }
+        )
+        .then((res) => {
+          console.log(res);
+          toast.success(res.data.message);
+          fetchFoodItems();
+        })
+        .catch((err) => {
+          console.log(err);
+          toast.error(err.response.data.message);
+        });
     }
   };
 
@@ -335,7 +348,7 @@ export default function MenuManagement() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600"
-                            onClick={() => deleteMenuItem(item.id)}
+                            onClick={() => deleteMenuItem(item._id)}
                           >
                             <Trash className="mr-2 h-4 w-4" />
                             Delete
