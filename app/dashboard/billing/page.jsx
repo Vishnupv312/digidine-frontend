@@ -24,6 +24,8 @@ import {
   AlertCircle,
   Crown,
   Zap,
+  PauseCircle,
+  StopCircle,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -36,6 +38,7 @@ export default function Billing() {
   const { user } = useAuth();
   const [planData, setPlanData] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
+  const [subscriptionDetails, setSubscriptionDetails] = useState(null);
   const router = useRouter();
   const [userData, setUserData] = useState(null);
   const [userStatus, setUserStatus] = useState(false);
@@ -48,7 +51,14 @@ export default function Billing() {
   }, []);
 
   useEffect(() => {
-    if (userData) {
+    if (
+      userData &&
+      userData.subscriptions &&
+      userData.subscriptions.length > 0
+    ) {
+      fetchSubscriptionDetails(
+        userData.subscriptions[0].razorpay_subscription_id
+      );
       userStatusCheck();
     }
   }, [userData]);
@@ -105,17 +115,19 @@ export default function Billing() {
   const fetchUserDetails = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}api/auth/me`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/auth/me?payments=true`,
         { withCredentials: true }
       );
       setUserData(response.data.userData);
 
-      // Check if user has active subscription
+      // Check if user has active subscription - updated to use subscriptions array
       if (
-        response.data.userData.subscription &&
-        response.data.userData.subscription.length > 0
+        response.data.userData.subscriptions &&
+        response.data.userData.subscriptions.length > 0
       ) {
-        setCurrentPlan(response.data.userData.subscription[0]);
+        // For now, we'll use the first subscription, but you might want to find the active one
+        const activeSubscription = response.data.userData.subscriptions[0];
+        setCurrentPlan(activeSubscription);
       }
     } catch (err) {
       console.error("Error fetching user details:", err);
@@ -153,6 +165,19 @@ export default function Billing() {
       console.error("Error updating user data:", err);
       toast.error(err?.response?.data?.message || "Failed to update profile");
       throw err;
+    }
+  };
+
+  const fetchSubscriptionDetails = async (sub_id) => {
+    try {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/fetch-subscription-details?sub_id=${sub_id}`,
+        { withCredentials: true }
+      );
+      setSubscriptionDetails(response.data.data);
+    } catch (err) {
+      console.error("Error fetching subscription details:", err);
+      toast.error("Failed to fetch subscription details");
     }
   };
 
@@ -220,15 +245,45 @@ export default function Billing() {
       const rzp = new window.Razorpay(options);
       rzp.open();
     } catch (err) {
-      console.error("Payment failed:", err);
-      toast.error("Payment failed. Please try again.");
+      console.log("Payment failed:", err);
+      toast.error(err.response.data.message);
     } finally {
       setIsLoading(false);
     }
   };
 
   const isPlanActive = (planId) => {
-    return currentPlan && currentPlan.planId === planId;
+    return subscriptionDetails && subscriptionDetails.plan_id === planId;
+  };
+
+  // Check if user can purchase new plan (only if no active subscription)
+  const canPurchasePlan = () => {
+    if (!subscriptionDetails) return true;
+
+    // Allow purchase if current subscription is cancelled, expired, or completed
+    const inactiveStates = ["cancelled", "expired", "completed"];
+    return inactiveStates.includes(subscriptionDetails.status);
+  };
+
+  // Get plan name from planData based on plan_id
+  const getPlanName = (planId) => {
+    if (!planData.items) return "Unknown Plan";
+    const plan = planData.items.find((p) => p.id === planId);
+    return plan ? plan.item.name : "Unknown Plan";
+  };
+
+  // Get plan amount from planData based on plan_id
+  const getPlanAmount = (planId) => {
+    if (!planData.items) return 0;
+    const plan = planData.items.find((p) => p.id === planId);
+    return plan ? Math.round(plan.item.amount / 100) : 0;
+  };
+
+  // Get plan period from planData based on plan_id
+  const getPlanPeriod = (planId) => {
+    if (!planData.items) return "month";
+    const plan = planData.items.find((p) => p.id === planId);
+    return plan ? plan.period : "month";
   };
 
   // Prepare initial form data for the modal
@@ -260,28 +315,91 @@ export default function Billing() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "success":
+      case "created":
+      case "authenticated":
+      case "active":
         return <CheckCircle className="h-4 w-4 text-green-600" />;
-      case "failed":
-        return <XCircle className="h-4 w-4 text-red-600" />;
       case "pending":
         return <Clock className="h-4 w-4 text-yellow-600" />;
+      case "halted":
+        return <PauseCircle className="h-4 w-4 text-orange-600" />;
+      case "cancelled":
+      case "expired":
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      case "completed":
+        return <StopCircle className="h-4 w-4 text-blue-600" />;
       default:
         return <AlertCircle className="h-4 w-4 text-gray-600" />;
     }
   };
 
   const getStatusBadge = (status) => {
-    const variants = {
-      success: "default",
-      failed: "destructive",
-      pending: "secondary",
+    const statusConfig = {
+      created: {
+        variant: "secondary",
+        label: "Created",
+        color: "bg-gray-100 text-gray-800",
+      },
+      authenticated: {
+        variant: "default",
+        label: "Active",
+        color: "bg-green-100 text-green-800",
+      },
+      active: {
+        variant: "default",
+        label: "Active",
+        color: "bg-green-100 text-green-800",
+      },
+      pending: {
+        variant: "secondary",
+        label: "Pending",
+        color: "bg-yellow-100 text-yellow-800",
+      },
+      halted: {
+        variant: "outline",
+        label: "Halted",
+        color: "bg-orange-100 text-orange-800",
+      },
+      cancelled: {
+        variant: "destructive",
+        label: "Cancelled",
+        color: "bg-red-100 text-red-800",
+      },
+      completed: {
+        variant: "outline",
+        label: "Completed",
+        color: "bg-blue-100 text-blue-800",
+      },
+      expired: {
+        variant: "destructive",
+        label: "Expired",
+        color: "bg-red-100 text-red-800",
+      },
     };
-    return (
-      <Badge variant={variants[status] || "secondary"}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
-      </Badge>
-    );
+
+    const config = statusConfig[status] || statusConfig.created;
+
+    return <Badge className={config.color}>{config.label}</Badge>;
+  };
+
+  const getStatusMessage = (status) => {
+    const messages = {
+      created:
+        "Your subscription has been created and is waiting for authentication.",
+      authenticated: "Your subscription is active and running smoothly.",
+      active: "Your subscription is active and running smoothly.",
+      pending:
+        "Your subscription payment is pending. Please complete the payment.",
+      halted:
+        "Your subscription has been temporarily paused. Contact support if needed.",
+      cancelled:
+        "Your subscription has been cancelled. You can reactivate by choosing a new plan.",
+      completed: "Your subscription has completed its billing cycle.",
+      expired:
+        "Your subscription has expired. Please renew to continue using our services.",
+    };
+
+    return messages[status] || "Unknown subscription status.";
   };
 
   const fadeIn = {
@@ -348,23 +466,78 @@ export default function Billing() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {currentPlan ? (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-2xl font-bold">
-                            {currentPlan.planName || "Active Plan"}
-                          </h3>
-                          <p className="text-gray-600">
-                            ₹{currentPlan.amount || 0}/
-                            {currentPlan.interval || "month"}
+                    {subscriptionDetails ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-2xl font-bold">
+                              {getPlanName(subscriptionDetails.plan_id)}
+                            </h3>
+                            <p className="text-gray-600">
+                              ₹{getPlanAmount(subscriptionDetails.plan_id)}/
+                              {getPlanPeriod(subscriptionDetails.plan_id)}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {getStatusIcon(subscriptionDetails.status)}
+                            {getStatusBadge(subscriptionDetails.status)}
+                          </div>
+                        </div>
+
+                        <div className="p-4 bg-gray-50 rounded-lg">
+                          <p className="text-sm text-gray-700">
+                            {getStatusMessage(subscriptionDetails.status)}
                           </p>
                         </div>
-                        <Badge
-                          variant="default"
-                          className="bg-green-100 text-green-800"
-                        >
-                          {currentPlan.status || "Active"}
-                        </Badge>
+
+                        <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                          <div>
+                            <p className="text-sm text-gray-500">
+                              Total Billing Cycles
+                            </p>
+                            <p className="font-semibold">
+                              {subscriptionDetails.total_count}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Paid Cycles</p>
+                            <p className="font-semibold">
+                              {subscriptionDetails.paid_count}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="pt-2">
+                          <p className="text-sm text-gray-500">
+                            Subscription ID
+                          </p>
+                          <p className="font-mono text-sm">
+                            {subscriptionDetails.id}
+                          </p>
+                        </div>
+
+                        {/* Action buttons based on status */}
+                        {subscriptionDetails.status === "pending" && (
+                          <Button
+                            className="w-full"
+                            onClick={() =>
+                              handlePayment(subscriptionDetails.plan_id)
+                            }
+                          >
+                            Complete Payment
+                          </Button>
+                        )}
+
+                        {["cancelled", "expired", "completed"].includes(
+                          subscriptionDetails.status
+                        ) && (
+                          <Button
+                            className="w-full"
+                            onClick={() => setActiveTab("plans")}
+                          >
+                            Choose New Plan
+                          </Button>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center py-8">
@@ -395,9 +568,13 @@ export default function Billing() {
                       <Receipt className="mr-2 h-4 w-4" />
                       View All Invoices
                     </Button>
-                    <Button className="w-full" variant="outline">
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => setActiveTab("plans")}
+                    >
                       <Calendar className="mr-2 h-4 w-4" />
-                      Change Plan
+                      {canPurchasePlan() ? "Choose Plan" : "View Plans"}
                     </Button>
                   </CardContent>
                 </Card>
@@ -435,9 +612,40 @@ export default function Billing() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <p className="text-center text-gray-500 py-8">
-                    No payment history available
-                  </p>
+                  {userData?.subscriptions &&
+                  userData.subscriptions.length > 0 ? (
+                    <div className="space-y-3">
+                      {userData.subscriptions.map((subscription, index) => (
+                        <div
+                          key={subscription._id}
+                          className="flex items-center justify-between p-4 border rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            {getStatusIcon(subscription.status)}
+                            <div>
+                              <p className="font-medium">
+                                Subscription Payment
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Payment ID: {subscription.razorpay_payment_id}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Subscription ID:{" "}
+                                {subscription.razorpay_subscription_id}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            {getStatusBadge(subscription.status)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-center text-gray-500 py-8">
+                      No payment history available
+                    </p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -480,13 +688,18 @@ export default function Billing() {
                         className="w-full cursor-pointer"
                         variant={isPlanActive(plan.id) ? "outline" : "default"}
                         onClick={() => handlePayment(plan.id)}
-                        disabled={isLoading || isPlanActive(plan.id)}
+                        disabled={
+                          isLoading ||
+                          (isPlanActive(plan.id) && !canPurchasePlan())
+                        }
                       >
-                        {isPlanActive(plan.id)
+                        {isPlanActive(plan.id) && !canPurchasePlan()
                           ? "Current Plan"
                           : isLoading
                           ? "Processing..."
-                          : "Upgrade Now"}
+                          : canPurchasePlan() || !isPlanActive(plan.id)
+                          ? "Choose Plan"
+                          : "Renew Plan"}
                       </Button>
                     </CardContent>
                   </Card>
