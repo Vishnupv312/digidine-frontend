@@ -252,6 +252,85 @@ export default function Billing() {
     }
   };
 
+  const handleUpgradePlan = async (plan_id) => {
+    // Check if user data is complete before allowing upgrade
+    if (!checkUserDataComplete()) {
+      setIsModalOpen(true);
+      return;
+    }
+
+    // Show confirmation dialog for upgrade
+    const confirmUpgrade = window.confirm(
+      `Are you sure you want to upgrade to ${getPlanName(
+        plan_id
+      )}? Your current subscription will be cancelled and a new one will be created.`
+    );
+
+    if (!confirmUpgrade) return;
+
+    setIsLoading(true);
+    try {
+      const res = await axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/upgrade-plan`,
+        { plan_id },
+        { withCredentials: true }
+      );
+
+      const { key, subscription_id } = res.data;
+
+      const loadRazorpay = () => {
+        return new Promise((resolve, reject) => {
+          if (window.Razorpay) return resolve();
+          const script = document.createElement("script");
+          script.src = "https://checkout.razorpay.com/v1/checkout.js";
+          script.onload = () => resolve();
+          script.onerror = () => reject("Failed to load Razorpay SDK");
+          document.body.appendChild(script);
+        });
+      };
+
+      await loadRazorpay();
+
+      const options = {
+        key,
+        subscription_id,
+        name: "Digidine",
+        description: "Digidine Subscription Upgrade",
+        image: "/logo.png",
+        handler: function (response) {
+          console.log("Upgrade payment successful:", response);
+          toast.success("Plan upgraded successfully!");
+
+          // Send payment response to backend
+          axios.post(
+            `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/payment-response`,
+            response,
+            { withCredentials: true }
+          );
+
+          // Refresh user data to get updated subscription
+          fetchUserDetails();
+        },
+        modal: {
+          ondismiss: function () {
+            if (confirm("Are you sure you want to close the form?")) {
+              console.log("Checkout form closed by the user");
+            } else {
+              console.log("Complete the payment");
+            }
+          },
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+    } catch (err) {
+      console.log("Upgrade failed:", err);
+      toast.error(err?.response?.data?.message || "Failed to upgrade plan");
+    } finally {
+      setIsLoading(false);
+    }
+  };
   const isPlanActive = (planId) => {
     return subscriptionDetails && subscriptionDetails.plan_id === planId;
   };
@@ -654,56 +733,85 @@ export default function Billing() {
           <TabsContent value="plans">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {planData.items &&
-                planData.items.map((plan) => (
-                  <Card
-                    key={plan.id}
-                    className={`relative ${
-                      isPlanActive(plan.id)
-                        ? "border-green-500 shadow-lg"
-                        : "border-blue-500 shadow-lg"
-                    }`}
-                  >
-                    {isPlanActive(plan.id) && (
-                      <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-500">
-                        Current Plan
-                      </Badge>
-                    )}
-                    <CardHeader className="text-center">
-                      <CardTitle>{plan.item.name}</CardTitle>
-                      <div className="text-3xl font-bold">
-                        ₹{Math.round(plan.item.amount / 100)}
-                        <span className="text-sm font-normal text-gray-500">
-                          /{plan.period}
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2 text-sm">
-                          <CheckCircle className="h-4 w-4 text-green-600" />
-                          {plan.item.description}
+                planData.items.map((plan) => {
+                  // Calculate if this is an upgrade option
+                  const isUpgrade =
+                    subscriptionDetails && !isPlanActive(plan.id);
+
+                  return (
+                    <Card
+                      key={plan.id}
+                      className={`relative ${
+                        isPlanActive(plan.id)
+                          ? "border-green-500 shadow-lg"
+                          : isUpgrade
+                          ? "border-blue-500 shadow-lg ring-2 ring-blue-200"
+                          : "border-gray-200 shadow-lg"
+                      }`}
+                    >
+                      {isPlanActive(plan.id) && (
+                        <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-green-500">
+                          Current Plan
+                        </Badge>
+                      )}
+
+                      {isUpgrade && (
+                        <Badge className="absolute -top-2 right-4 bg-blue-500">
+                          <Zap className="h-3 w-3 mr-1" />
+                          Upgrade
+                        </Badge>
+                      )}
+
+                      <CardHeader className="text-center">
+                        <CardTitle>{plan.item.name}</CardTitle>
+                        <div className="text-3xl font-bold">
+                          ₹{Math.round(plan.item.amount / 100)}
+                          <span className="text-sm font-normal text-gray-500">
+                            /{plan.period}
+                          </span>
                         </div>
-                      </div>
-                      <Button
-                        className="w-full cursor-pointer"
-                        variant={isPlanActive(plan.id) ? "outline" : "default"}
-                        onClick={() => handlePayment(plan.id)}
-                        disabled={
-                          isLoading ||
-                          (isPlanActive(plan.id) && !canPurchasePlan())
-                        }
-                      >
-                        {isPlanActive(plan.id) && !canPurchasePlan()
-                          ? "Current Plan"
-                          : isLoading
-                          ? "Processing..."
-                          : canPurchasePlan() || !isPlanActive(plan.id)
-                          ? "Choose Plan"
-                          : "Renew Plan"}
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardHeader>
+
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 text-sm">
+                            <CheckCircle className="h-4 w-4 text-green-600" />
+                            {plan.item.description}
+                          </div>
+                        </div>
+
+                        <Button
+                          className="w-full cursor-pointer"
+                          variant={
+                            isPlanActive(plan.id) ? "outline" : "default"
+                          }
+                          onClick={() => {
+                            // Simple logic: if user has subscription and choosing different plan = upgrade
+                            if (subscriptionDetails && !isPlanActive(plan.id)) {
+                              handleUpgradePlan(plan.id);
+                            } else {
+                              handlePayment(plan.id);
+                            }
+                          }}
+                          disabled={
+                            isLoading ||
+                            (isPlanActive(plan.id) &&
+                              subscriptionDetails?.status === "active")
+                          }
+                        >
+                          {isPlanActive(plan.id) &&
+                          subscriptionDetails?.status === "active"
+                            ? "Current Plan"
+                            : isLoading
+                            ? "Processing..."
+                            : subscriptionDetails && !isPlanActive(plan.id)
+                            ? "Upgrade Plan" // Always show "Upgrade Plan" for different plans when user has subscription
+                            : "Choose Plan"}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
             </div>
 
             <Card className="mt-8">
