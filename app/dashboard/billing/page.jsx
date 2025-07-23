@@ -44,7 +44,8 @@ export default function Billing() {
   const [userStatus, setUserStatus] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-
+  const [currentInvoice, setCurrentInvoice] = useState(null);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   useEffect(() => {
     fetchUserDetails();
     FetchPlans();
@@ -56,12 +57,44 @@ export default function Billing() {
       userData.subscriptions &&
       userData.subscriptions.length > 0
     ) {
-      fetchSubscriptionDetails(
-        userData.subscriptions[0].razorpay_subscription_id
-      );
+      // Find the most recent active subscription first
+      const activeSubscription = findActiveSubscription(userData.subscriptions);
+      if (activeSubscription) {
+        fetchSubscriptionDetails(activeSubscription.razorpay_subscription_id);
+        setCurrentPlan(activeSubscription);
+      }
       userStatusCheck();
     }
   }, [userData]);
+
+  const findActiveSubscription = (subscriptions) => {
+    // Priority order: authenticated > active > created > others > cancelled
+    const statusPriority = {
+      authenticated: 1,
+      active: 2,
+      created: 3,
+      pending: 4,
+      halted: 5,
+      completed: 6,
+      expired: 7,
+      cancelled: 8,
+    };
+
+    // Sort subscriptions by status priority and creation date (newest first)
+    const sortedSubs = subscriptions.sort((a, b) => {
+      const aPriority = statusPriority[a.status] || 99;
+      const bPriority = statusPriority[b.status] || 99;
+
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+
+      // If same priority, prefer newer subscription
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+
+    return sortedSubs[0];
+  };
 
   // Check user status when plans tab is clicked
   useEffect(() => {
@@ -72,6 +105,14 @@ export default function Billing() {
       }
     }
   }, [activeTab, userData]);
+
+  const canPurchasePlan = () => {
+    if (!subscriptionDetails) return true;
+
+    // Allow purchase only if no active subscription exists
+    const activeStates = ["authenticated", "active", "created", "pending"];
+    return !activeStates.includes(subscriptionDetails.status);
+  };
 
   const FetchPlans = async () => {
     try {
@@ -332,16 +373,14 @@ export default function Billing() {
     }
   };
   const isPlanActive = (planId) => {
-    return subscriptionDetails && subscriptionDetails.plan_id === planId;
-  };
+    if (!subscriptionDetails) return false;
 
-  // Check if user can purchase new plan (only if no active subscription)
-  const canPurchasePlan = () => {
-    if (!subscriptionDetails) return true;
-
-    // Allow purchase if current subscription is cancelled, expired, or completed
-    const inactiveStates = ["cancelled", "expired", "completed"];
-    return inactiveStates.includes(subscriptionDetails.status);
+    // Consider active only if subscription is in active state AND matches plan
+    const activeStates = ["authenticated", "active", "created"];
+    return (
+      activeStates.includes(subscriptionDetails.status) &&
+      subscriptionDetails.plan_id === planId
+    );
   };
 
   // Get plan name from planData based on plan_id
@@ -459,6 +498,52 @@ export default function Billing() {
     const config = statusConfig[status] || statusConfig.created;
 
     return <Badge className={config.color}>{config.label}</Badge>;
+  };
+
+  const viewInvoice = async (invoiceId) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/invoice/view/${invoiceId}`,
+        { withCredentials: true }
+      );
+      setCurrentInvoice(response.data.invoice);
+      setIsInvoiceModalOpen(true);
+    } catch (err) {
+      console.error("Error viewing invoice:", err);
+      toast.error("Failed to view invoice");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const downloadInvoice = async (invoiceId) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/invoice/${invoiceId}`,
+        {
+          withCredentials: true,
+          responseType: "blob", // Important for file downloads
+        }
+      );
+
+      // Create a blob URL for the PDF
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `invoice_${invoiceId}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.parentNode.removeChild(link);
+
+      toast.success("Invoice downloaded successfully");
+    } catch (err) {
+      console.error("Error downloading invoice:", err);
+      toast.error("Failed to download invoice");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const getStatusMessage = (status) => {
@@ -639,11 +724,27 @@ export default function Billing() {
                     <CardTitle>Quick Actions</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button className="w-full" variant="outline">
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() =>
+                        downloadInvoice(currentPlan?.razorpay_subscription_id)
+                      }
+                      disabled={
+                        !currentPlan ||
+                        !["authenticated", "active"].includes(
+                          currentPlan.status
+                        )
+                      }
+                    >
                       <Download className="mr-2 h-4 w-4" />
-                      Download Invoice
+                      Download Latest Invoice
                     </Button>
-                    <Button className="w-full" variant="outline">
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => setActiveTab("history")}
+                    >
                       <Receipt className="mr-2 h-4 w-4" />
                       View All Invoices
                     </Button>
@@ -654,6 +755,17 @@ export default function Billing() {
                     >
                       <Calendar className="mr-2 h-4 w-4" />
                       {canPurchasePlan() ? "Choose Plan" : "View Plans"}
+                    </Button>
+                    // In your Quick Actions card, add this debug button
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() =>
+                        debugSubscription(currentPlan?.razorpay_subscription_id)
+                      }
+                      disabled={!currentPlan}
+                    >
+                      Debug Subscription
                     </Button>
                   </CardContent>
                 </Card>
@@ -694,31 +806,58 @@ export default function Billing() {
                   {userData?.subscriptions &&
                   userData.subscriptions.length > 0 ? (
                     <div className="space-y-3">
-                      {userData.subscriptions.map((subscription, index) => (
-                        <div
-                          key={subscription._id}
-                          className="flex items-center justify-between p-4 border rounded-lg"
-                        >
-                          <div className="flex items-center gap-3">
-                            {getStatusIcon(subscription.status)}
-                            <div>
-                              <p className="font-medium">
-                                Subscription Payment
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Payment ID: {subscription.razorpay_payment_id}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                Subscription ID:{" "}
-                                {subscription.razorpay_subscription_id}
-                              </p>
+                      {userData.subscriptions
+                        .sort(
+                          (a, b) =>
+                            new Date(b.createdAt || 0) -
+                            new Date(a.createdAt || 0)
+                        )
+                        .map((subscription, index) => (
+                          <div
+                            key={subscription._id}
+                            className="flex items-center justify-between p-4 border rounded-lg"
+                          >
+                            <div className="flex items-center gap-3">
+                              {getStatusIcon(subscription.status)}
+                              <div>
+                                <p className="font-medium">
+                                  {getPlanName(subscriptionDetails?.plan_id)}{" "}
+                                  Subscription
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Payment ID: {subscription.razorpay_payment_id}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  Subscription ID:{" "}
+                                  {subscription.razorpay_subscription_id}
+                                </p>
+                                {subscription.createdAt && (
+                                  <p className="text-sm text-gray-500">
+                                    Date:{" "}
+                                    {new Date(
+                                      subscription.createdAt
+                                    ).toLocaleDateString()}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="text-right flex items-center gap-2">
+                              {getStatusBadge(subscription.status)}
+                              {subscription.status === "authenticated" && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    viewInvoice(subscription.invoiceId)
+                                  } // Make sure you have invoiceId in your data
+                                >
+                                  <Receipt className="h-4 w-4 mr-1" />
+                                  View Invoice
+                                </Button>
+                              )}
                             </div>
                           </div>
-                          <div className="text-right">
-                            {getStatusBadge(subscription.status)}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   ) : (
                     <p className="text-center text-gray-500 py-8">
@@ -847,6 +986,80 @@ export default function Billing() {
         userData={{ status: userStatus }}
         initialData={getInitialFormData()}
       />
+      {isInvoiceModalOpen && currentInvoice && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-bold">
+                Invoice #{currentInvoice.id}
+              </h2>
+              <button
+                onClick={() => setIsInvoiceModalOpen(false)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <h3 className="font-semibold">Billed To:</h3>
+                <p>{currentInvoice.restaurant.name}</p>
+                <p>{currentInvoice.restaurant.owner}</p>
+                <p>{currentInvoice.restaurant.address}</p>
+              </div>
+              <div className="text-right">
+                <p>
+                  <span className="font-semibold">Invoice Date:</span>{" "}
+                  {currentInvoice.date}
+                </p>
+                <p>
+                  <span className="font-semibold">Plan:</span>{" "}
+                  {currentInvoice.plan}
+                </p>
+              </div>
+            </div>
+
+            <div className="border rounded-lg overflow-hidden mb-6">
+              <table className="w-full">
+                <thead className="bg-gray-100">
+                  <tr>
+                    <th className="py-2 px-4 text-left">Description</th>
+                    <th className="py-2 px-4 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr className="border-t">
+                    <td className="py-2 px-4">{currentInvoice.plan}</td>
+                    <td className="py-2 px-4 text-right">
+                      ₹{currentInvoice.amount}
+                    </td>
+                  </tr>
+                  <tr className="bg-gray-50 font-semibold">
+                    <td className="py-2 px-4">Total</td>
+                    <td className="py-2 px-4 text-right">
+                      ₹{currentInvoice.amount}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-4">
+              <Button
+                variant="outline"
+                onClick={() => setIsInvoiceModalOpen(false)}
+              >
+                Close
+              </Button>
+              <Button onClick={() => downloadInvoice(currentInvoice.id)}>
+                <Download className="mr-2 h-4 w-4" />
+                Download PDF
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
