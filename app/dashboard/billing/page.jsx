@@ -46,10 +46,11 @@ export default function Billing() {
   const [activeTab, setActiveTab] = useState("overview");
   const [currentInvoice, setCurrentInvoice] = useState(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [loadData, setLoadData] = useState(false);
   useEffect(() => {
     fetchUserDetails();
     FetchPlans();
-  }, []);
+  }, [loadData]);
 
   useEffect(() => {
     if (
@@ -121,6 +122,7 @@ export default function Billing() {
         { withCredentials: true }
       );
       setPlanData(response.data);
+      setLoadData(false);
     } catch (err) {
       console.error("Error fetching plans:", err);
       toast.error(err?.response?.data?.message || "Failed to fetch plans");
@@ -170,6 +172,7 @@ export default function Billing() {
         const activeSubscription = response.data.userData.subscriptions[0];
         setCurrentPlan(activeSubscription);
       }
+      setLoadData(false);
     } catch (err) {
       console.error("Error fetching user details:", err);
       toast.error(
@@ -349,8 +352,10 @@ export default function Billing() {
             { withCredentials: true }
           );
 
+          setLoadData(true);
           // Refresh user data to get updated subscription
           fetchUserDetails();
+          fetchSubscriptionDetails(subscription_id);
         },
         modal: {
           ondismiss: function () {
@@ -756,17 +761,6 @@ export default function Billing() {
                       <Calendar className="mr-2 h-4 w-4" />
                       {canPurchasePlan() ? "Choose Plan" : "View Plans"}
                     </Button>
-                    // In your Quick Actions card, add this debug button
-                    <Button
-                      className="w-full"
-                      variant="outline"
-                      onClick={() =>
-                        debugSubscription(currentPlan?.razorpay_subscription_id)
-                      }
-                      disabled={!currentPlan}
-                    >
-                      Debug Subscription
-                    </Button>
                   </CardContent>
                 </Card>
 
@@ -953,7 +947,7 @@ export default function Billing() {
                 })}
             </div>
 
-            <Card className="mt-8">
+            {/* <Card className="mt-8">
               <CardHeader>
                 <CardTitle>Payment Methods</CardTitle>
                 <CardDescription>
@@ -974,7 +968,7 @@ export default function Billing() {
                   )}
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
           </TabsContent>
         </Tabs>
       </motion.div>
