@@ -26,6 +26,11 @@ import {
   Zap,
   PauseCircle,
   StopCircle,
+  X,
+  Building,
+  Mail,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import axios from "axios";
@@ -33,6 +38,233 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../../context/AuthProvider";
 import UserDataModal from "../../../components/user-data-modal";
 
+const InvoiceModal = ({ isOpen, onClose, invoice, onDownload }) => {
+  if (!isOpen || !invoice) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-auto">
+        {/* Modal Header */}
+        <div className="flex justify-between items-center p-6 border-b">
+          <h2 className="text-2xl font-bold text-gray-900">Invoice Preview</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 transition-colors"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        {/* Invoice Content */}
+        <div className="p-6 bg-white">
+          {/* Invoice Header */}
+          <div className="flex justify-between items-start mb-8">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">INVOICE</h1>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p>
+                  <span className="font-semibold">Invoice Number:</span>{" "}
+                  {invoice.id}
+                </p>
+                <p>
+                  <span className="font-semibold">Date:</span> {invoice.date}
+                </p>
+                <p>
+                  <span className="font-semibold">Due Date:</span>{" "}
+                  {invoice.dueDate}
+                </p>
+              </div>
+            </div>
+            <div className="text-right">
+              <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center mb-2">
+                <Building className="h-8 w-8 text-gray-400" />
+              </div>
+              <p className="text-xs text-gray-500">Company Logo</p>
+            </div>
+          </div>
+
+          {/* Company and Client Details */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            {/* From */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                From:
+              </h3>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p className="font-medium text-gray-900">
+                  {invoice.company.name}
+                </p>
+                <p>{invoice.company.address}</p>
+                <p>
+                  {invoice.company.city}, {invoice.company.state} -{" "}
+                  {invoice.company.zipCode}
+                </p>
+                <p>{invoice.company.country}</p>
+              </div>
+            </div>
+
+            {/* Bill To */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                Bill To:
+              </h3>
+              <div className="space-y-1 text-sm text-gray-600">
+                <p className="font-medium text-gray-900">
+                  {invoice.client.company}
+                </p>
+                <p>{invoice.client.address}</p>
+                <p>
+                  {invoice.client.city}, {invoice.client.state}
+                </p>
+                <p>{invoice.client.country}</p>
+                {invoice.client.zipCode !== "N/A" && (
+                  <p>{invoice.client.zipCode}</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Invoice Table */}
+          <div className="border border-gray-200 rounded-lg overflow-hidden mb-8">
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Description
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Qty
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price (₹)
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tax Rate
+                  </th>
+                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount (₹)
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {invoice.plan.description}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {invoice.plan.quantity}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {invoice.plan.unitPrice.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {invoice.plan.taxRate}%
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right">
+                    {invoice.plan.totalAmount.toFixed(2)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Totals Section */}
+          <div className="flex justify-end mb-8">
+            <div className="w-64 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Subtotal:</span>
+                <span className="text-gray-900">
+                  ₹{invoice.plan.subtotal.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">
+                  GST ({invoice.plan.taxRate}%):
+                </span>
+                <span className="text-gray-900">
+                  ₹{invoice.plan.taxAmount.toFixed(2)}
+                </span>
+              </div>
+              <div className="border-t border-gray-200 pt-2">
+                <div className="flex justify-between font-semibold text-lg">
+                  <span className="text-gray-900">Total Amount:</span>
+                  <span className="text-gray-900">
+                    ₹{invoice.plan.totalAmount.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Subscription Details */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Subscription Details
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p>
+                  <span className="font-medium">Subscription ID:</span>{" "}
+                  {invoice.subscription.id}
+                </p>
+                <p>
+                  <span className="font-medium">Plan:</span> {invoice.plan.name}
+                </p>
+                <div>
+                  <span className="font-medium">Status:</span>
+                  <Badge
+                    className={`ml-2 ${
+                      invoice.subscription.status === "active" ||
+                      invoice.subscription.status === "authenticated"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {invoice.subscription.status}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <p>
+                  <span className="font-medium">Billing Period:</span>{" "}
+                  {invoice.subscription.startDate} to{" "}
+                  {invoice.subscription.endDate}
+                </p>
+                <p>
+                  <span className="font-medium">Payment Method:</span>{" "}
+                  {invoice.subscription.paymentMethod}
+                </p>
+                <p>
+                  <span className="font-medium">Payments:</span>{" "}
+                  {invoice.subscription.paidCount}/
+                  {invoice.subscription.totalCount} completed (
+                  {invoice.subscription.remainingCount} remaining)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-sm text-gray-600">
+            <p>Thank you for your business!</p>
+            <p>For any queries, please contact our support team.</p>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <div className="flex justify-end gap-4 p-6 border-t bg-gray-50">
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+          <Button onClick={onDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
 export default function Billing() {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -505,11 +737,11 @@ export default function Billing() {
     return <Badge className={config.color}>{config.label}</Badge>;
   };
 
-  const viewInvoice = async (invoiceId) => {
+  const viewInvoice = async (subscriptionId) => {
     try {
       setIsLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/invoice/view/${invoiceId}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/view-invoice?sub_id=${subscriptionId}`,
         { withCredentials: true }
       );
       setCurrentInvoice(response.data.invoice);
@@ -522,32 +754,26 @@ export default function Billing() {
     }
   };
 
-  const downloadInvoice = async (invoiceId) => {
+  const downloadInvoice = async (subscriptionId) => {
     try {
-      setIsLoading(true);
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/invoice/${invoiceId}`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}api/v1/payments/invoice?sub_id=${subscriptionId}`,
+
         {
           withCredentials: true,
-          responseType: "blob", // Important for file downloads
+          responseType: "blob",
         }
       );
 
-      // Create a blob URL for the PDF
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
-      link.setAttribute("download", `invoice_${invoiceId}.pdf`);
+      link.setAttribute("download", `invoice-${subscriptionId}.pdf`);
       document.body.appendChild(link);
       link.click();
-      link.parentNode.removeChild(link);
-
-      toast.success("Invoice downloaded successfully");
-    } catch (err) {
-      console.error("Error downloading invoice:", err);
-      toast.error("Failed to download invoice");
-    } finally {
-      setIsLoading(false);
+      link.remove();
+    } catch (error) {
+      console.error("Error downloading invoice:", error);
     }
   };
 
@@ -837,13 +1063,16 @@ export default function Billing() {
                             </div>
                             <div className="text-right flex items-center gap-2">
                               {getStatusBadge(subscription.status)}
-                              {subscription.status === "authenticated" && (
+                              {(subscription.status === "authenticated" ||
+                                subscription.status === "active") && (
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() =>
-                                    viewInvoice(subscription.invoiceId)
-                                  } // Make sure you have invoiceId in your data
+                                    viewInvoice(
+                                      subscription.razorpay_subscription_id
+                                    )
+                                  }
                                 >
                                   <Receipt className="h-4 w-4 mr-1" />
                                   View Invoice
@@ -980,7 +1209,17 @@ export default function Billing() {
         userData={{ status: userStatus }}
         initialData={getInitialFormData()}
       />
-      {isInvoiceModalOpen && currentInvoice && (
+      <InvoiceModal
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+        invoice={currentInvoice}
+        onDownload={() => {
+          if (currentPlan?.razorpay_subscription_id) {
+            downloadInvoice(currentPlan.razorpay_subscription_id);
+          }
+        }}
+      />
+      {/* {isInvoiceModalOpen && currentInvoice && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-auto">
             <div className="flex justify-between items-center mb-4">
@@ -998,9 +1237,9 @@ export default function Billing() {
             <div className="grid grid-cols-2 gap-4 mb-6">
               <div>
                 <h3 className="font-semibold">Billed To:</h3>
-                <p>{currentInvoice.restaurant.name}</p>
-                <p>{currentInvoice.restaurant.owner}</p>
-                <p>{currentInvoice.restaurant.address}</p>
+                <p>{currentInvoice.client.name}</p>
+                <p>{currentInvoice.client.owner}</p>
+                <p>{currentInvoice.client.address}</p>
               </div>
               <div className="text-right">
                 <p>
@@ -1046,14 +1285,18 @@ export default function Billing() {
               >
                 Close
               </Button>
-              <Button onClick={() => downloadInvoice(currentInvoice.id)}>
+              <Button
+                onClick={() =>
+                  downloadInvoice(currentPlan?.razorpay_subscription_id)
+                }
+              >
                 <Download className="mr-2 h-4 w-4" />
                 Download PDF
               </Button>
             </div>
           </div>
         </div>
-      )}
+      )} */}
     </>
   );
 }
